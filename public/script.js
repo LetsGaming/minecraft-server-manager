@@ -1,8 +1,8 @@
 // Constants
-const STATUS_UPDATE_INTERVAL_S = 10; // seconds
+const STATUS_UPDATE_INTERVAL_S = 120; // seconds
 const STATUS_UPDATE_INTERVAL_MS = STATUS_UPDATE_INTERVAL_S * 1000;
 
-const LOG_POLL_INTERVAL_S = 2; // seconds
+const LOG_POLL_INTERVAL_S = 15; // seconds
 const LOG_POLL_INTERVAL_MS = LOG_POLL_INTERVAL_S * 1000;
 
 let autoScroll = true;
@@ -135,7 +135,7 @@ function getStatus() {
       }
       // Update status display
       const statusDiv = document.getElementById("status");
-      statusDiv.textContent = `Status: ${status.status || "Unknown"}`;
+      statusDiv.textContent = `Status: ${status.output || "Unknown"}`;
     })
     .catch((err) => console.error("Failed to fetch status:", err));
 }
