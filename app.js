@@ -106,18 +106,26 @@ app.get("/download", (req, res) => {
     return res.status(400).json({ error: "No file specified." });
   }
 
-  // Check if fileName is an absolute path or just a name
   const filePath = path.isAbsolute(fileName) ? fileName : path.join(BACKUP_DIR, fileName);
 
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ error: "File not found." });
   }
 
-  res.download(filePath, (err) => {
-    if (err) {
-      console.error("Error downloading file:", err);
-      res.status(500).json({ error: "Error downloading file." });
-    }
+  const fileSize = fs.statSync(filePath).size;
+  console.log(`File size: ${fileSize} bytes`);
+
+  // Stream the file instead of loading it into memory
+  const fileStream = fs.createReadStream(filePath);
+  res.setHeader("Content-Length", fileSize);
+  res.setHeader("Content-Type", "application/octet-stream");
+  res.setHeader("Content-Disposition", `attachment; filename=${path.basename(filePath)}`);
+
+  fileStream.pipe(res).on("finish", () => {
+    console.log("File download complete");
+  }).on("error", (err) => {
+    console.error("Error during streaming:", err);
+    res.status(500).json({ error: "Error downloading file." });
   });
 });
 
