@@ -148,7 +148,7 @@ function getStatus() {
       }
       // Update status display
       const statusDiv = document.getElementById("status");
-      statusDiv.textContent = `Status: ${status.output || "Unknown"}`;
+      statusDiv.textContent = `${status.output || "Status: Unknown"}`;
     })
     .catch((err) => console.error("Failed to fetch status:", err));
 }
