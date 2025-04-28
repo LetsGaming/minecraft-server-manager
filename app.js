@@ -105,10 +105,14 @@ app.get("/download", (req, res) => {
   if (!fileName) {
     return res.status(400).json({ error: "No file specified." });
   }
-  const filePath = path.join(BACKUP_DIR, fileName);
+
+  // Check if fileName is an absolute path or just a name
+  const filePath = path.isAbsolute(fileName) ? fileName : path.join(BACKUP_DIR, fileName);
+
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ error: "File not found." });
   }
+
   res.download(filePath, (err) => {
     if (err) {
       console.error("Error downloading file:", err);
