@@ -5,6 +5,21 @@ const STATUS_UPDATE_INTERVAL_MS = STATUS_UPDATE_INTERVAL_S * 1000;
 const LOG_POLL_INTERVAL_S = 15; // seconds
 const LOG_POLL_INTERVAL_MS = LOG_POLL_INTERVAL_S * 1000;
 
+document.addEventListener("DOMContentLoaded", () => {
+  // Fetch logs immediately when the page loads
+  pollLogs();
+
+  // Fetch the server status immediately when the page loads
+  getStatus();
+
+  // Load backups when the page loads
+  loadBackups();
+
+  // Start the polling intervals
+  setInterval(pollLogs, LOG_POLL_INTERVAL_MS); // Poll logs every 15 seconds
+  setInterval(getStatus, STATUS_UPDATE_INTERVAL_MS); // Update status every 120 seconds
+});
+
 let autoScroll = true;
 
 // Toast queue to manage the order of toast messages
@@ -122,8 +137,6 @@ function pollLogs() {
     .catch((err) => console.error("Failed to fetch logs:", err));
 }
 
-setInterval(pollLogs, LOG_POLL_INTERVAL_MS);
-
 // Status update
 function getStatus() {
   fetch("/status")
@@ -139,8 +152,6 @@ function getStatus() {
     })
     .catch((err) => console.error("Failed to fetch status:", err));
 }
-
-setInterval(getStatus, STATUS_UPDATE_INTERVAL_MS); // Update status every 10 seconds
 
 // Populate backup options
 function loadBackups() {
@@ -167,8 +178,6 @@ function loadBackups() {
     })
     .catch((err) => showToast("Error loading backups: " + err));
 }
-
-loadBackups();
 
 document.getElementById("backup-form").addEventListener("submit", (e) => {
   e.preventDefault();
