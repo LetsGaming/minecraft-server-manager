@@ -154,10 +154,27 @@ app.get("/list-backups", (req, res) => {
   if (!fs.existsSync(BACKUP_DIR)) {
     return res.status(500).json({ error: "Backup directory does not exist." });
   }
-  const backups = fs
-    .readdirSync(BACKUP_DIR)
-    .filter((file) => file.endsWith(".tar.gz") || file.endsWith(".tar.zst"))
-    .map((file) => ({ name: file }));
+
+  // Function to get all backups recursively from subdirectories
+  const getBackups = (dir) => {
+    let backups = [];
+    const files = fs.readdirSync(dir);
+
+    files.forEach((file) => {
+      const filePath = path.join(dir, file);
+      if (fs.statSync(filePath).isDirectory()) {
+        // If it's a directory, recursively search for backups in it
+        backups = backups.concat(getBackups(filePath));
+      } else if (file.endsWith(".tar.gz") || file.endsWith(".tar.zst")) {
+        // If it's a backup file, add it to the list
+        backups.push({ name: filePath });
+      }
+    });
+
+    return backups;
+  };
+
+  const backups = getBackups(BACKUP_DIR);
 
   res.json(backups);
 });
