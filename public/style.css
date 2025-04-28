@@ -60,6 +60,26 @@ h1 {
   border-bottom: 3px solid #4caf50;
 }
 
+.tab-buttons .reload-button {
+  background-color: transparent;
+  color: #4CAF50;
+  font-size: 24px; /* Bigger for the icon */
+  padding: 8px 12px;
+  margin: 0 10px;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.2s ease, color 0.3s ease;
+}
+
+.tab-buttons .reload-button:hover {
+  color: #45a049;
+  transform: rotate(30deg); /* Small rotation on hover */
+}
+
+.tab-buttons .reload-button:active {
+  transform: rotate(360deg); /* Full spin when clicked */
+}
+
 .tab-content {
   display: none;
   background: white;
