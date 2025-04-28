@@ -15,8 +15,12 @@
             Server Control
           </button>
           <button class="tab-button" onclick="showTab('log')">Logs</button>
-          <button class="tab-button" onclick="showTab('backup')">Backups</button>
+          <button class="tab-button" onclick="showTab('backup')">
+            Backups
+          </button>
+          <button class="reload-button" onclick="reloadAll()">Reload</button>
         </div>
+
         <div id="status">Status: None</div>
       </header>
 
@@ -49,15 +53,13 @@
             <label for="archive-option">Archive Backup?</label>
             <input type="checkbox" id="archive-option" />
           </div>
-          <button class="action-button">
-            Create Backup
-          </button>
+          <button class="action-button">Create Backup</button>
         </form>
+
         <form id="restore-form">
-          <label for="restore-file">Select Backup to Restore</label>
+          <label for="backup-select">Select Backup to Restore</label>
           <select id="backup-select">
             <option value="" disabled selected>Choose Backup</option>
-            <!-- Dynamic backup list will be inserted here -->
           </select>
           <button class="action-button" type="submit">Restore Backup</button>
         </form>
@@ -67,7 +69,6 @@
           <label for="download-file">Select Backup to Download</label>
           <select name="file" id="download-file">
             <option value="" disabled selected>Choose Backup</option>
-            <!-- Dynamic backup list will be inserted here -->
           </select>
           <button class="action-button" type="submit">Download Backup</button>
         </form>

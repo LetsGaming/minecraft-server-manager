@@ -35,9 +35,10 @@ h1 {
   border-bottom: 2px solid #ddd;
 }
 
-.tab-buttons .tab-button {
+.tab-buttons .tab-button,
+.tab-buttons .reload-button {
   background-color: transparent;
-  color: #4CAF50;
+  color: #4caf50;
   padding: 10px 20px;
   font-size: 16px;
   margin: 0 10px;
@@ -48,14 +49,15 @@ h1 {
   font-weight: normal;
 }
 
-.tab-buttons .tab-button:hover {
+.tab-buttons .tab-button:hover,
+.tab-buttons .reload-button:hover {
   color: #45a049;
 }
 
 .tab-buttons .tab-button.active {
-  color: #4CAF50;
+  color: #4caf50;
   font-weight: bold;
-  border-bottom: 3px solid #4CAF50;
+  border-bottom: 3px solid #4caf50;
 }
 
 .tab-content {
@@ -98,13 +100,15 @@ pre#log-output {
   white-space: pre-wrap;
 }
 
-form input, form button {
+form input,
+form button {
   padding: 10px;
   font-size: 16px;
   margin: 5px 0;
 }
 
-form input[type="text"], form select {
+form input[type="text"],
+form select {
   width: 100%;
   padding: 12px;
   font-size: 16px;
@@ -147,22 +151,28 @@ form button:hover {
 }
 
 /* Backup Controls Styling */
-#backup-form, #restore-form, #download-form {
+#backup-form,
+#restore-form,
+#download-form {
   margin-top: 20px;
 }
 
-#backup-form .action-button, #restore-form .action-button, #download-form .action-button {
+#backup-form .action-button,
+#restore-form .action-button,
+#download-form .action-button {
   width: 100%;
   margin-top: 20px;
 }
 
 /* Label for Select Elements */
-select, input[type="checkbox"], label {
+select,
+input[type="checkbox"],
+label {
   font-size: 16px;
   margin-bottom: 10px;
 }
 
-/* Styling the section titles for clarity */
+/* Section titles */
 h2 {
   font-size: 1.8em;
 }
@@ -170,24 +180,13 @@ h2 {
 h3 {
   margin-top: 30px;
   font-size: 1.6em;
-  color: #4CAF50;
-}
-
-/* Style for the form groups */
-form .form-group {
-  margin-bottom: 15px;
-  display: flex;
-  flex-direction: column;
-}
-
-form .form-group label {
-  font-weight: bold;
+  color: #4caf50;
 }
 
 /* Toast styles */
 .toast {
   position: fixed;
-  bottom: 20px; /* Position the toast at the bottom */
+  bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
   padding: 10px 20px;
@@ -201,7 +200,6 @@ form .form-group label {
   transition: opacity 0.5s ease-in-out;
 }
 
-/* Toast visibility */
 .toast.show {
   display: block;
   opacity: 1;
