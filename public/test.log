@@ -1,0 +1,45 @@
+Minecraft Server Log Fallback
+
+Welcome to the Minecraft Server Log Viewer!
+
+You are currently viewing the test.log file because the expected latest.log file was not found.
+
+Possible Reasons for Missing latest.log:
+
+1. Minecraft Server Not Running:
+   - If the server isn't actively running, there won't be any recent logs to show.
+   - Fix: Make sure the Minecraft server is started. You can do this by running the following command in your server's directory:
+     sudo bash start.sh
+
+2. Log File Rotation:
+   - The latest.log file may have been rotated (renamed or archived) and is no longer available as the latest log.
+   - Fix: Check for archived log files such as latest.log.1 or older logs in the logs directory. You can manually access them or configure the server to retain more logs.
+
+3. Server Crashed or Stopped Abruptly:
+   - If the server crashed unexpectedly, the latest.log might not have been created or may have been corrupted.
+   - Fix: Look for any error messages in the terminal or check for system logs that might explain why the server stopped. Try restarting the server and check if logs start being generated.
+
+4. Log File Permissions Issues:
+   - The latest.log file may exist but the server may not have the necessary permissions to read it.
+   - Fix: Ensure that the server process has the correct read permissions for the log file and its parent directories. You can check the permissions using the following command:
+     ls -l /path/to/logs/latest.log
+     If needed, adjust the permissions with:
+     chmod 644 /path/to/logs/latest.log
+
+What You Are Seeing:
+
+- test.log: This is a fallback log provided by the system for diagnostic purposes. If you’re seeing this, it usually means that the latest.log file couldn't be found or read.
+  
+Action Steps:
+
+1. Verify if the Minecraft server is running by checking your server's process list:
+    ps aux | grep java
+    If you don't see the server process, start it using the start.sh script.
+
+2. Check the logs/ directory for any other .log files that may contain useful information.
+
+3. Ensure the correct permissions on the log files to allow reading.
+
+4. Restart the server using the restart.sh script and monitor the new log output.
+
+If none of the above steps help, you may want to contact server administrators or check the server's setup for more advanced troubleshooting.
