@@ -4,9 +4,9 @@ const LOG_POLL_INTERVAL_S = 15;
 const LOG_POLL_INTERVAL_MS = LOG_POLL_INTERVAL_S * 1000;
 
 document.addEventListener("DOMContentLoaded", () => {
-  pollLogs();
-  getStatus();
   loadBackups();
+  getStatus();
+  pollLogs();
 
   setInterval(pollLogs, LOG_POLL_INTERVAL_MS);
   setInterval(getStatus, STATUS_UPDATE_INTERVAL_MS);
@@ -159,9 +159,9 @@ function loadBackups() {
 
 // Reload button functionality
 function reloadAll() {
-  pollLogs();
-  getStatus();
   loadBackups();
+  getStatus();
+  pollLogs();
   showToast("Reloaded!");
 }
 
