@@ -14,7 +14,8 @@
         "fs-extra": "^11.0.0",
         "minecraft-server-manager": "file:",
         "nodemon": "^2.0.22",
-        "path": "^0.12.7"
+        "path": "^0.12.7",
+        "ws": "^8.18.1"
     },
     "devDependencies": {
         "nodemon": "^2.0.22"

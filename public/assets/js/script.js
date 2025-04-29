@@ -141,12 +141,12 @@ function loadBackups() {
 
         backups.forEach((backup) => {
           const option = document.createElement("option");
-          option.value = backup.name;
+          option.value = backup.path;
           option.textContent = backup.name;
           restoreSelect.appendChild(option);
 
           const downloadOption = document.createElement("option");
-          downloadOption.value = backup.name;
+          downloadOption.value = backup.path;
           downloadOption.textContent = backup.name;
           downloadSelect.appendChild(downloadOption);
         });
