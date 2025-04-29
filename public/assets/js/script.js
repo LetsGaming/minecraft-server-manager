@@ -102,7 +102,8 @@ logOutput.addEventListener("scroll", () => {
 });
 
 function pollLogs() {
-  fetch("/log")
+  const logLength = document.getElementById("log-length").value;
+  fetch(`/log?length=${logLength}`)
     .then((response) => response.text())
     .then((data) => {
       logOutput.textContent = data;

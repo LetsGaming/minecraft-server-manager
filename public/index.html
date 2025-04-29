@@ -45,19 +45,35 @@
 
       <div id="log" class="tab-content container">
         <h2>Live Logs</h2>
-        <label>
-          <input type="checkbox" id="auto-scroll-checkbox" checked />
-          Auto-Scroll
-        </label>
+        <div>
+          <label>
+            <label for="log-length">Logs Length</label>
+            <input
+              type="number"
+              id="log-length"
+              value="100"
+              min="1"
+              max="1000"
+            />
+          </label>
+        </div>
+        <div>
+          <label>
+            <label for="auto-scroll-checkbox">Auto Scroll</label>
+            <input type="checkbox" id="auto-scroll-checkbox" checked />
+          </label>
+        </div>
         <pre id="log-output">Loading logs...</pre>
       </div>
 
       <div id="backup" class="tab-content container">
         <h2>Backup Controls</h2>
         <form id="backup-form">
-          <div class="checkbox-group">
-            <label for="archive-option">Archive Backup?</label>
-            <input type="checkbox" id="archive-option" />
+          <div>
+            <label>
+              <label for="archive-option">Archive Backup?</label>
+              <input type="checkbox" id="archive-option" />
+            </label>
           </div>
           <button class="action-button">Create Backup</button>
         </form>
