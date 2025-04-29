@@ -8,7 +8,7 @@ const PORT = config.PORT || 3000;
 const SCRIPT_DIR = config.SCRIPT_DIR;
 
 const SCRIPTS = {
-  status: path.join(SCRIPT_DIR, "status.sh"),
+  status: path.join(SCRIPT_DIR, "misc", "status.sh"),
   start: path.join(SCRIPT_DIR, "start.sh"),
   shutdown: path.join(SCRIPT_DIR, "shutdown.sh"),
   restart: path.join(SCRIPT_DIR, "restart.sh"),
