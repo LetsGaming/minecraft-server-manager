@@ -4,7 +4,7 @@ const SCRIPTS = global.SCRIPTS;
 module.exports = {
   status: async (req, res) => {
     try {
-      const result = await runScript(SCRIPTS.status, true);
+      const result = await runScript(SCRIPTS.status);
       res.json(result || { message: "Server status retrieved." });
     } catch (err) {
       res.status(500).json(err);
