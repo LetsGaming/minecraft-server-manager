@@ -10,6 +10,7 @@ const PORT = 3000;
 const config = JSON.parse(fs.readFileSync("./config.json", "utf8"));
 const SCRIPT_DIR = config.scriptDir;
 const SERVER_PATH = config.serverPath;
+const LOG_LINES = config.logLines || 100; // Default to 100 lines if not specified 
 const BACKUP_DIR = path.join(SERVER_PATH, "backups");
 
 // Define script paths
@@ -156,7 +157,7 @@ function serveLogFile(filePath, res) {
       return res.status(500).json({ error: "Error reading log file." });
     }
     const lines = data.trim().split("\n");
-    const lastLines = lines.slice(-100).join("\n");
+    const lastLines = lines.slice(-LOG_LINES).join("\n");
     res.type("text/plain").send(lastLines);
   });
 }

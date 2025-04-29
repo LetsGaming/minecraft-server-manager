@@ -1,5 +1,6 @@
 {
     "scriptDir": "/path/to/your/scripts",
-    "serverPath": "/path/to/your/minecraft/server"
+    "serverPath": "/path/to/your/minecraft/server",
+    "logLines": 1000
   }
   
