@@ -1,5 +1,6 @@
 {
   "PORT": 3000,
+  "USER": "your_username",
   "SCRIPT_DIR": "/path/to/your/scripts",
   "SERVER_PATH": "/path/to/your/minecraft/server",
   "LOG_LINES": 1000

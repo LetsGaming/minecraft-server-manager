@@ -27,7 +27,6 @@ function fetchWithErrorHandling(url, options = {}) {
       }
     })
     .then((data) => {
-      console.log("Response Data:", data);
       return data;
     })
     .catch((err) => showToast(err));
