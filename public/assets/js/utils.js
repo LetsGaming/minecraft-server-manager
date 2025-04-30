@@ -1,4 +1,4 @@
-export function updateLogsView(show) {
+export function updateLogsView(show, updateToggle = true) {
   const logToggleContainer = document.getElementById("log-toggle");
   const logToggleButton = document.getElementById("log-toggle-button");
   const logOutput = document.getElementById("log-output");
@@ -7,8 +7,11 @@ export function updateLogsView(show) {
 
   window.HIDE_LOGS = !show;
   logToggleContainer.style.display = show ? "block" : "none";
-  logToggleButton.checked = show;
   logOutput.style.display = show ? "block" : "none";
   terminalContainer.style.display = show ? "none" : "block";
   logControls.forEach((el) => (el.style.display = show ? "block" : "none"));
+
+  if (updateToggle) {
+    logToggleButton.checked = show;
+  }
 }

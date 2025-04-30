@@ -69,7 +69,8 @@ async function setupLogToggle() {
 
   logToggleButton.addEventListener("click", (e) => {
     const isHidden = e.target.checked;
-    updateLogsView(!isHidden);
+    updateLogsView(!isHidden, false);
+
   });
 }
 
