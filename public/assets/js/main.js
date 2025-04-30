@@ -56,7 +56,7 @@ async function setupLoginUi() {
 
   const authed = await isAuthed();
   logToggleContainer.style.display = authed ? "block" : "none";
-  updateLogsView(!!authed);
+  updateLogsView(authed);
   updateTabsView(authed, true);
 
   logToggleButton.addEventListener("click", (e) => {
