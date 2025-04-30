@@ -1,4 +1,4 @@
-import { isAuthed } from "./api";
+import { isAuthed } from "./api.js";
 
 export function isTokenSet() {
   const token = localStorage.getItem("token");
@@ -44,6 +44,6 @@ export async function updateTabsView(showLoginRequired, useIsAuthed = false) {
   });
 
   if (logoutButton) {
-    logoutButton.style.display = loginRequired ? "" : "block";
+    logoutButton.style.display = loginRequired ? "none" : "block";
   }
 }
