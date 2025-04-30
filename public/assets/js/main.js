@@ -7,11 +7,16 @@ import {
   pollLogs,
   LOG_POLL_INTERVAL_MS,
   STATUS_UPDATE_INTERVAL_MS,
+  isAuthed,
 } from "./api.js";
 
 import { showToast, showTab } from "./ui.js";
 
-import { updateLoginView, updateLogToggleView, updateLogsView } from "./utils.js";
+import {
+  updateLoginView,
+  updateLogToggleView,
+  updateLogsView,
+} from "./utils.js";
 
 window.HIDE_LOGS = false;
 
@@ -50,9 +55,10 @@ function setupAutoScroll(logOutput, checkbox) {
 }
 
 async function setupUi() {
-  updateLogToggleView(false); // Hide log toggle at startup
+  const authed = await isAuthed();
+  updateLogToggleView(authed); // Hide log toggle at startup
   // Hide login-required elements at startup
-  await updateLoginView(false, true, true);
+  await updateLoginView(authed, true);
 }
 
 async function setuplogToggle() {
