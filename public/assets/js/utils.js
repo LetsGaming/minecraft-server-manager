@@ -1,3 +1,11 @@
+export function isTokenSet() {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    return false;
+  }
+  return true;
+}
+
 export function updateLogsView(show, updateToggle = true) {
   const logToggleButton = document.getElementById("log-toggle-button");
   const logOutput = document.getElementById("log-output");
@@ -26,7 +34,8 @@ export function updateLogsView(show, updateToggle = true) {
 export function updateTabsView(showLoginRequired) {
   const logoutButton = document.getElementById("logout-button");
   const loginRequiredElements = document.querySelectorAll(".login-required");
-  const loginRequired = !!showLoginRequired;
+  const tokenSet = isTokenSet();
+  const loginRequired = !!showLoginRequired && tokenSet;
 
   loginRequiredElements.forEach((el) => {
     el.style.display = loginRequired ? "block" : "none";

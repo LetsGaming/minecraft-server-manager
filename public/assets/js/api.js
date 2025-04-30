@@ -79,14 +79,6 @@ export function loadBackups() {
   });
 }
 
-export function isTokenSet() {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    return false;
-  }
-  return true;
-}
-
 export async function isAuthed() {
   const token = localStorage.getItem("token");
   if (!token) return false;

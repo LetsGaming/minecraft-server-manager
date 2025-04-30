@@ -1,5 +1,4 @@
 import {
-  isTokenSet,
   login,
   logout,
   sendCommand,
@@ -13,7 +12,7 @@ import {
 
 import { showToast, showTab } from "./ui.js";
 
-import { updateLogsView, updateTabsView } from "./utils.js";
+import { updateLogsView } from "./utils.js";
 
 window.HIDE_LOGS = false;
 
