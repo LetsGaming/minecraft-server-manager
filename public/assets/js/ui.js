@@ -1,6 +1,8 @@
 import { isAuthed } from "./api.js";
 import { terminal } from "./terminal.js";
 
+let terminalLoaded = false;
+
 export function showToast(message) {
   toastQueue.push(message);
   if (!isToastVisible) {
@@ -78,5 +80,9 @@ function replaceLogs(showTerminal) {
 }
 
 function loadTerminalInto() {
+  if (terminalLoaded) {
+    return;
+  }
   terminal();
+  terminalLoaded = true;
 }
