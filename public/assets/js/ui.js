@@ -72,9 +72,9 @@ function replaceLogs(showTerminal) {
     loadTerminalInto();
   } else {
     terminalContainer.style.display = "none";
-    terminalContainer.innerHTML = ""; // Clear the terminal container
+    document.getElementById("terminal").innerHTML = "";
     logOutput.style.display = "block";
-    logControls.style.display = "block";
+    logControls.forEach((el) => (el.style.display = "block"));
   }
 }
 
