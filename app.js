@@ -1,20 +1,18 @@
 const express = require("express");
 const expressWs = require("express-ws");
 const path = require("path");
-const http = require("http");
 const config = require("./src/config/config.json");
 
 let initialized = false;
 
-function initWebSocket(app, server) {
+function initWebSocket(app) {
   if (initialized) return;
-  expressWs(app, server);
+  expressWs(app);
   initialized = true;
 }
 
 const app = express();
-const server = http.createServer(app);
-initWebSocket(app, server);
+initWebSocket(app);
 
 const PORT = config.PORT || 3000;
 const SCRIPT_DIR = config.SCRIPT_DIR;
