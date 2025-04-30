@@ -10,10 +10,12 @@ router.ws("/ws/terminal", (ws, req) => {
   const token = params.token;
 
   if (!token || !isAuthed(token)) {
+    console.warn("Unauthorized WebSocket access attempt.");
     ws.send("Unauthorized WebSocket access");
     ws.close();
     return;
   }
+  console.log("Websocket authentication successful");
   req.user = tokenStore.get(token);
   initTerminal(ws);
 });
