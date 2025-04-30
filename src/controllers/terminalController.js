@@ -82,6 +82,5 @@ function initTerminal(ws) {
 }
 
 module.exports = {
-  initWebSocket,
   initTerminal,
 };
