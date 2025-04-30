@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <title>Minecraft Server Control Panel</title>
     <link rel="stylesheet" href="assets/css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css"
+    />
   </head>
   <body>
     <div>
@@ -77,7 +81,9 @@
 
         <pre id="log-output">Loading logs...</pre>
 
-        <div id="terminal-container" style="display: none"></div>
+        <div id="terminal-container" style="display: none">
+          <div id="terminal"></div>
+        </div>
       </div>
 
       <div id="backup" class="tab-content container">
@@ -111,5 +117,7 @@
       </div>
     </div>
     <script type="module" src="./assets/js/main.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit/lib/xterm-addon-fit.min.js"></script>
   </body>
 </html>
