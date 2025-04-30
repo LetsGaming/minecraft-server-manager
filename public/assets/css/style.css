@@ -200,3 +200,39 @@ input[type="checkbox"]:focus-visible {
 .toast-container {
   position: relative;
 }
+
+/* Terminal Styling */
+#terminal-container {
+  background: #2d2d2d; /* Dark background */
+  color: #a8e6a1; /* Light green text */
+  padding: 10px;
+  height: 100%; /* Make the terminal take up 100% height of its parent */
+  width: 100%; /* Make the terminal take up 100% width of its parent */
+  overflow: auto; /* Keep scrolling confined to the terminal */
+  white-space: pre-wrap; /* Handle long lines */
+  font-family: "Courier New", monospace; /* Monospace font */
+  font-size: 14px; /* Adjust font size to match log */
+  border-radius: 8px; /* Match the rounded corners */
+  position: absolute; /* Keep it in place inside the log-output */
+  top: 0;
+  left: 0;
+}
+
+/* Custom scrollbar for terminal */
+#terminal-container::-webkit-scrollbar {
+  width: 12px;
+}
+
+#terminal-container::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+#terminal-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+#terminal {
+  position: absolute !important;
+  top: 0 !important;
+}

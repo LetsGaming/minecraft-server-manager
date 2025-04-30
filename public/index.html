@@ -45,25 +45,18 @@
 
       <div id="log" class="tab-content container">
         <h2>Live Logs</h2>
-        <div>
-          <label>
-            <label for="log-length">Logs Length</label>
-            <input
-              type="number"
-              id="log-length"
-              value="100"
-              min="1"
-              max="1000"
-            />
-          </label>
+
+        <div id="log-controls">
+          <label for="log-length">Logs Length</label>
+          <input type="number" id="log-length" value="100" min="1" max="1000" />
+
+          <label for="auto-scroll-checkbox">Auto Scroll</label>
+          <input type="checkbox" id="auto-scroll-checkbox" checked />
         </div>
-        <div>
-          <label>
-            <label for="auto-scroll-checkbox">Auto Scroll</label>
-            <input type="checkbox" id="auto-scroll-checkbox" checked />
-          </label>
-        </div>
+
         <pre id="log-output">Loading logs...</pre>
+
+        <div id="terminal-container" style="display: none;"></div>
       </div>
 
       <div id="backup" class="tab-content container">
