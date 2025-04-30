@@ -24,10 +24,15 @@ export function updateLogsView(show, updateToggle = true) {
 }
 
 export function updateTabsView(showLoginRequired) {
+  const logoutButton = document.getElementById("logout-button");
   const loginRequiredElements = document.querySelectorAll(".login-required");
   const loginRequired = !!showLoginRequired;
 
   loginRequiredElements.forEach((el) => {
     el.style.display = loginRequired ? "block" : "none";
   });
+
+  if (logoutButton) {
+    logoutButton.style.display = loginRequired ? "none" : "block";
+  }
 }
