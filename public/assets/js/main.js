@@ -7,12 +7,11 @@ import {
   pollLogs,
   LOG_POLL_INTERVAL_MS,
   STATUS_UPDATE_INTERVAL_MS,
-  isAuthed,
 } from "./api.js";
 
 import { showToast, showTab } from "./ui.js";
 
-import { updateLogsView, updateLoginView } from "./utils.js";
+import { updateLoginView } from "./utils.js";
 
 window.HIDE_LOGS = false;
 
