@@ -30,6 +30,7 @@ const SCRIPTS = {
 
 global.SCRIPTS = SCRIPTS;
 
+app.use(express.static("public"));
 app.use(express.json());
 
 // Use Routers
@@ -38,8 +39,6 @@ app.use("/", require("./src/routes/serverRoutes"));
 app.use("/", require("./src/routes/backupRoutes"));
 app.use("/", require("./src/routes/logRoutes"));
 app.use("/", require("./src/routes/terminalRoutes"));
-
-app.use(express.static("public"));
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
