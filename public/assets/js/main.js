@@ -13,6 +13,8 @@ import {
 
 import { showToast, showTab } from "./ui.js";
 
+import { updateLogsView } from "./utils.js";
+
 window.HIDE_LOGS = false;
 
 // Public window-bound methods
@@ -61,22 +63,13 @@ function setupAutoScroll(logOutput, checkbox) {
 
 async function setupLogToggle() {
   const logToggleButton = document.getElementById("log-toggle-button");
-  const logOutput = document.getElementById("log-output");
-  const logControls = document.querySelectorAll(".log-control-inputs");
 
   const authed = await isAuthed();
-  window.HIDE_LOGS = !authed;
-  document.getElementById("log-toggle").style.display = authed;
-  logToggleButton.checked = authed;
+  updateLogsView(!!authed);
 
-  logToggleButton.addEventListener("click", () => {
-    const isHidden = logOutput.style.display === "none";
-    logOutput.style.display = isHidden ? "block" : "none";
-    logControls.forEach(
-      (el) => (el.style.display = isHidden ? "block" : "none")
-    );
-    logToggleButton.textContent = isHidden ? "Hide Logs" : "Show Logs";
-    window.HIDE_LOGS = !isHidden;
+  logToggleButton.addEventListener("click", (e) => {
+    const isHidden = e.target.checked;
+    updateLogsView(!isHidden);
   });
 }
 
