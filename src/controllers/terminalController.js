@@ -14,49 +14,79 @@ function initWebSocket(app) {
 
 function initTerminal(ws) {
   const isWindows = os.platform() === "win32";
-  const shell = isWindows ? "powershell.exe" : "bash";
-  const shellArgs = isWindows ? ["-NoLogo"] : [];
-
-  const shellProcess = spawn(shell, shellArgs, {
-    cwd: process.env.HOME || process.env.USERPROFILE,
-    env: process.env,
-  });
-
-  // Try to attach to an existing screen session
-  if (!isWindows) {
-    shellProcess.stdin.write(`screen -r ${MODPACK_NAME}\n`);
+  if (isWindows) {
+    ws.send("Web terminal is not supported on Windows.");
+    ws.close();
+    return;
   }
 
-  // Receive user input from frontend WebSocket
-  ws.on("message", (msg) => {
-    if (msg === "close") {
-      shellProcess.kill();
+  // Check if the screen session exists
+  const checkScreen = spawn("screen", ["-ls"]);
+  let screenListOutput = "";
+
+  checkScreen.stdout.on("data", (data) => {
+    screenListOutput += data.toString();
+  });
+
+  checkScreen.on("close", () => {
+    const hasSession = screenListOutput.includes(`.${MODPACK_NAME}`);
+    if (!hasSession) {
+      ws.send(`No screen session found for "${MODPACK_NAME}".`);
+      ws.close();
       return;
     }
-    shellProcess.stdin.write(msg);
+
+    // Attach to the existing screen session (safe entry point)
+    const screenAttach = spawn("screen", ["-r", MODPACK_NAME]);
+
+    ws.on("message", (msg) => {
+      if (msg === "close") {
+        screenAttach.kill();
+        return;
+      }
+
+      const raw = Buffer.from(msg, "utf-8");
+
+      // Control characters to block: Ctrl+A (0x01), Ctrl+C (0x03), Ctrl+D (0x04)
+      const forbidden = [0x01, 0x03, 0x04];
+      const blocked = raw.some((byte) => forbidden.includes(byte));
+
+      if (blocked) {
+        ws.send(
+          "Blocked unsafe control character (e.g. Ctrl+A, Ctrl+C, Ctrl+D)."
+        );
+        return;
+      }
+
+      screenAttach.stdin.write(raw);
+    });
+
+    screenAttach.stdout.on("data", (data) => {
+      ws.send(data.toString());
+    });
+
+    screenAttach.stderr.on("data", (data) => {
+      ws.send(data.toString());
+    });
+
+    screenAttach.on("close", (code) => {
+      ws.send(`\nScreen session closed with code ${code}`);
+      ws.close();
+    });
+
+    ws.on("close", () => {
+      screenAttach.kill();
+    });
+
+    ws.on("error", (err) => {
+      console.error("WebSocket error:", err);
+      screenAttach.kill();
+    });
   });
 
-  // Send shell output to WebSocket client
-  shellProcess.stdout.on("data", (data) => {
-    ws.send(data.toString());
-  });
-
-  shellProcess.stderr.on("data", (data) => {
-    ws.send(data.toString());
-  });
-
-  shellProcess.on("close", (code) => {
-    ws.send(`\nShell closed with code ${code}`);
+  checkScreen.on("error", (err) => {
+    ws.send(`Error checking screen sessions: ${err.message}`);
     ws.close();
-  });
-
-  ws.on("close", () => {
-    shellProcess.kill();
-  });
-
-  ws.on("error", (err) => {
-    console.error("WebSocket error:", err);
-    shellProcess.kill();
   });
 }
 
