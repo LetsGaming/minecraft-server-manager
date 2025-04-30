@@ -8,6 +8,7 @@ import {
   pollLogs,
   LOG_POLL_INTERVAL_MS,
   STATUS_UPDATE_INTERVAL_MS,
+  isAuthed,
 } from "./api.js";
 
 import { showToast, showTab } from "./ui.js";
@@ -58,10 +59,15 @@ function setupAutoScroll(logOutput, checkbox) {
   return () => autoScroll; // return function to access current state
 }
 
-function setupLogToggle() {
+async function setupLogToggle() {
   const logToggleButton = document.getElementById("log-toggle-button");
   const logOutput = document.getElementById("log-output");
   const logControls = document.querySelectorAll(".log-control-inputs");
+
+  const authed = await isAuthed();
+  window.HIDE_LOGS = !authed;
+  logToggleButton.style.display = authed ? "block" : "none";
+  logToggleButton.checked = authed;
 
   logToggleButton.addEventListener("click", () => {
     const isHidden = logOutput.style.display === "none";
