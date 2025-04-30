@@ -68,9 +68,7 @@ function replaceLogs(showTerminal) {
     terminalContainer.style.display = "block";
     terminalContainer.style.overflow = "hidden";
 
-    if (!terminalContainer.hasChildNodes()) {
-      loadTerminalInto(terminalContainer);
-    }
+    loadTerminalInto();
   } else {
     terminalContainer.style.display = "none";
     terminalContainer.innerHTML = ""; // Clear the terminal container
