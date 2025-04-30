@@ -1,16 +1,30 @@
 const pty = require("node-pty");
+const fs = require("fs");
 const os = require("os");
-const { MODPACK_NAME } = require("../config/config.json");
+const path = require("path");
+const {
+  MODPACK_NAME,
+  SERVER_PATH,
+  BLOCKED_COMMANDS,
+} = require("../config/config.json");
+
+function isBlockedCommand(msg) {
+  const normalized = msg.trim().toLowerCase();
+  return BLOCKED_COMMANDS.some((blocked) => normalized.startsWith(blocked));
+}
 
 function initTerminal(ws) {
   console.log("WebSocket connection established.");
+
   if (os.platform() === "win32") {
     ws.send("Web terminal is not supported on Windows.");
     ws.close();
     return;
   }
 
-  console.log("Checking for existing screen sessions...");
+  const sessionName = MODPACK_NAME;
+  const logFile = path.resolve(SERVER_PATH, "logs", "latest.log");
+
   const check = pty.spawn("screen", ["-ls"], {
     name: "xterm-color",
     cols: 80,
@@ -25,15 +39,20 @@ function initTerminal(ws) {
   });
 
   check.onExit(() => {
-    const hasSession = output.includes(`.${MODPACK_NAME}`);
+    const hasSession = output.includes(`.${sessionName}`);
     if (!hasSession) {
-      ws.send(`No screen session found for "${MODPACK_NAME}".`);
+      ws.send(`No screen session found for "${sessionName}".`);
       ws.close();
       return;
     }
 
-    console.log(`Attaching to screen session "${MODPACK_NAME}"...`);
-    const term = pty.spawn("screen", ["-r", MODPACK_NAME], {
+    if (!fs.existsSync(logFile)) {
+      ws.send("Minecraft log file not found.");
+      ws.close();
+      return;
+    }
+
+    const tail = pty.spawn("tail", ["-n", "10", "-f", logFile], {
       name: "xterm-color",
       cols: 80,
       rows: 30,
@@ -41,34 +60,56 @@ function initTerminal(ws) {
       env: process.env,
     });
 
-    term.onData((data) => {
+    tail.onData((data) => {
       ws.send(data);
     });
 
     ws.on("message", (msg) => {
       if (msg === "close") {
-        term.kill();
+        tail.kill();
         return;
       }
 
       const raw = Buffer.from(msg, "utf-8");
-      const forbidden = [0x01, 0x03, 0x04];
-      const blocked = raw.some((byte) => forbidden.includes(byte));
-      if (blocked) {
-        ws.send("Blocked unsafe control character (e.g. Ctrl+A, Ctrl+C, Ctrl+D).");
+      const forbiddenBytes = [0x01, 0x03, 0x04];
+      const hasControlChars = raw.some((byte) => forbiddenBytes.includes(byte));
+      if (hasControlChars) {
+        ws.send(
+          "Blocked unsafe control character (e.g. Ctrl+A, Ctrl+C, Ctrl+D)."
+        );
         return;
       }
 
-      term.write(msg);
+      if (isBlockedCommand(msg)) {
+        ws.send(`Blocked command: "${msg.trim()}" is not allowed.`);
+        return;
+      }
+
+      const formatted = `${msg.trim()}\n`;
+      const send = pty.spawn(
+        "screen",
+        ["-S", sessionName, "-X", "stuff", formatted],
+        {
+          name: "xterm-color",
+          cwd: process.cwd(),
+          env: process.env,
+        }
+      );
+
+      send.onExit(({ exitCode }) => {
+        if (exitCode !== 0) {
+          ws.send(`Failed to send command: ${msg}`);
+        }
+      });
     });
 
     ws.on("close", () => {
-      term.kill();
+      tail.kill();
     });
 
     ws.on("error", (err) => {
       console.error("WebSocket error:", err);
-      term.kill();
+      tail.kill();
     });
   });
 }
