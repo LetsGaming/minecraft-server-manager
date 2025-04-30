@@ -51,9 +51,11 @@ function setupAutoScroll(logOutput, checkbox) {
 }
 
 async function setupLoginUi() {
+  const logToggleContainer = document.getElementById("log-toggle-container");
   const logToggleButton = document.getElementById("log-toggle-button");
 
   const authed = await isAuthed();
+  logToggleContainer.style.display = authed ? "block" : "none";
   updateLogsView(!!authed);
   updateTabsView(authed, true);
 

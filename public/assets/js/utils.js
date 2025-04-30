@@ -14,36 +14,40 @@ export function updateLogsView(show, updateToggle = true) {
   const logControls = document.querySelectorAll(".log-control-inputs");
   const terminalContainer = document.getElementById("terminal-container");
 
-  const shouldShow = !!show; // ensures boolean
+  const shouldShowLogs = !!show; // Normalize to boolean
 
-  window.HIDE_LOGS = !shouldShow;
+  window.HIDE_LOGS = !shouldShowLogs;
 
-  if (logOutput) logOutput.style.display = shouldShow ? "block" : "none";
-  if (terminalContainer)
-    terminalContainer.style.display = shouldShow ? "none" : "block";
+  // Toggle log output and terminal
+  if (logOutput) logOutput.style.display = shouldShowLogs ? "block" : "none";
+  if (terminalContainer) terminalContainer.style.display = shouldShowLogs ? "none" : "block";
 
+  // Toggle additional log controls
   logControls.forEach((el) => {
-    if (el) el.style.display = shouldShow ? "block" : "none";
+    if (el) el.style.display = shouldShowLogs ? "block" : "none";
   });
 
+  // Sync toggle button state
   if (updateToggle && logToggleButton) {
-    logToggleButton.checked = shouldShow;
+    logToggleButton.checked = shouldShowLogs;
   }
 
-  updateTabsView(shouldShow); // Update the tabs view
+  // Update visibility of login-required elements if needed
+  updateTabsView(shouldShowLogs);
 }
 
 export async function updateTabsView(showLoginRequired, useIsAuthed = false) {
   const logoutButton = document.getElementById("logout-button");
   const loginRequiredElements = document.querySelectorAll(".login-required");
-  const tokenSet = useIsAuthed ? isTokenSet() : await isAuthed();
-  const loginRequired = !!showLoginRequired && tokenSet;
+  const isLoggedIn = useIsAuthed ? isTokenSet() : await isAuthed();
+
+  const shouldShowProtected = Boolean(showLoginRequired) && isLoggedIn;
 
   loginRequiredElements.forEach((el) => {
-    el.style.display = loginRequired ? "block" : "none";
+    el.style.display = shouldShowProtected ? "block" : "none";
   });
 
   if (logoutButton) {
-    logoutButton.style.display = loginRequired ? "none" : "block";
+    logoutButton.style.display = shouldShowProtected ? "block" : "none";
   }
 }
