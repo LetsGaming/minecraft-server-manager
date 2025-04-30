@@ -1,9 +1,19 @@
 const express = require("express");
+const expressWs = require("express-ws");
 const path = require("path");
 const config = require("./src/config/config.json");
-const { initWebSocket } = require("./src/controllers/terminalController");
+
+let initialized = false;
+
+function initWebSocket(app) {
+  if (initialized) return;
+  expressWs(app);
+  initialized = true;
+}
 
 const app = express();
+initWebSocket(app);
+
 const PORT = config.PORT || 3000;
 const SCRIPT_DIR = config.SCRIPT_DIR;
 
@@ -17,8 +27,6 @@ const SCRIPTS = {
 };
 
 global.SCRIPTS = SCRIPTS;
-
-initWebSocket(app);
 
 app.use(express.static("public"));
 app.use(express.json());

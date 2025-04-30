@@ -1,12 +1,13 @@
 const express = require("express");
 const router = express.Router();
-const url = require("url");
+const querystring = require("querystring");
 const { initTerminal } = require("../controllers/terminalController");
 const { isAuthed, tokenStore } = require("../controllers/authController"); // Use this directly
 
 router.ws("/ws/terminal", (ws, req) => {
-  const parsedUrl = url.parse(req.url, true);
-  const token = parsedUrl.query.token;
+  const [path, query] = req.url.split("?");
+  const params = querystring.parse(query);
+  const token = params.token;
 
   if (!token || !isAuthed(token)) {
     ws.send("Unauthorized WebSocket access");

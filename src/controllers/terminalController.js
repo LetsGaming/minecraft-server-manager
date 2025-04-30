@@ -1,16 +1,6 @@
-const expressWs = require("express-ws");
 const { spawn } = require("child_process");
 const os = require("os");
 const { MODPACK_NAME } = require("../config/config.json");
-
-let initialized = false;
-
-// Enable express-ws support (once)
-function initWebSocket(app) {
-  if (initialized) return;
-  expressWs(app);
-  initialized = true;
-}
 
 function initTerminal(ws) {
   console.log("WebSocket connection established.");
