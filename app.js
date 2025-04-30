@@ -5,14 +5,15 @@ const config = require("./src/config/config.json");
 
 let initialized = false;
 
-function initWebSocket(app) {
+function initWebSocket(app, server) {
   if (initialized) return;
-  expressWs(app);
+  expressWs(app, server);
   initialized = true;
 }
 
 const app = express();
-initWebSocket(app);
+const server = require("http").createServer(app);
+initWebSocket(app, server);
 
 const PORT = config.PORT || 3000;
 const SCRIPT_DIR = config.SCRIPT_DIR;
@@ -31,6 +32,13 @@ global.SCRIPTS = SCRIPTS;
 app.use(express.static("public"));
 app.use(express.json());
 
+app.ws("/ws/echo", (ws, req) => {
+  ws.on("message", (msg) => {
+    console.log(`Received message: ${msg}`);
+    ws.send(`Echo: ${msg}`);
+  });
+});
+
 // Use Routers
 app.use("/", require("./src/routes/authRoutes"));
 app.use("/", require("./src/routes/serverRoutes"));
@@ -38,7 +46,7 @@ app.use("/", require("./src/routes/backupRoutes"));
 app.use("/", require("./src/routes/logRoutes"));
 app.use("/", require("./src/routes/terminalRoutes"));
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
