@@ -117,6 +117,7 @@ export function login() {
           .then(() => {
             showTab("control");
             document.getElementById("logout-button").style.display = "block";
+            document.getElementById("login-tab-button").style.display = "none";
           });
         return token;
       }
