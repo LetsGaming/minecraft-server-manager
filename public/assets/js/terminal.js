@@ -5,8 +5,8 @@ export function terminal() {
       fontSize: 14,
       cursorBlink: true,
       theme: {
-        background: "#2d2d2d" /* Dark background */,
-        foreground: "#a8e6a1" /* Light green text */,
+        background: "#2d2d2d",
+        foreground: "#a8e6a1",
       },
     });
 
@@ -38,11 +38,26 @@ export function terminal() {
       terminal.writeln("\r\n[WebSocket error]");
     });
 
+    let inputBuffer = "";
+
     terminal.onData((data) => {
-      socket.send(data);
+      if (data === "\r") {
+        // Enter pressed, send the command
+        socket.send(inputBuffer + "\n"); // send with newline
+        terminal.write("\r\n"); // echo newline in terminal
+        inputBuffer = ""; // reset buffer
+      } else if (data === "\u007f") {
+        // Handle backspace
+        if (inputBuffer.length > 0) {
+          inputBuffer = inputBuffer.slice(0, -1);
+          terminal.write("\b \b"); // erase character visually
+        }
+      } else {
+        inputBuffer += data;
+        terminal.write(data); // echo character
+      }
     });
 
-    // Resize terminal on window resize
     window.addEventListener("resize", () => {
       fitAddon.fit();
     });
