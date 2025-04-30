@@ -64,7 +64,8 @@
       fitAddon.fit();
 
       const protocol = location.protocol === "https:" ? "wss" : "ws";
-      const socket = new WebSocket(`${protocol}://localhost:3000/ws/terminal`);
+      const token = localStorage.getItem("token");
+      const socket = new WebSocket(`${protocol}://localhost:3000/ws/terminal?token=${token}`);
 
       socket.addEventListener("open", () => {
         terminal.writeln("Connected to server.\r\n");

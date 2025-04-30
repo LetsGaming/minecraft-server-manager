@@ -12,6 +12,22 @@ const users = JSON.parse(fs.readFileSync(usersFile, "utf-8"));
 // In-memory token store (token -> username)
 const tokenStore = new Map();
 
+exports.isAuthed = (token) => {
+  if (!token) return false;
+
+  const username = tokenStore.get(token);
+  if (!username) return false;
+
+  // Check if the user is still valid
+  const user = users.find((u) => u.username === username);
+  if (!user) {
+    tokenStore.delete(token);
+    return false;
+  }
+
+  return true;
+};
+
 exports.isAuthenticated = (req, res) => {
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) return res.status(401).json({ message: "No Token provided" });
