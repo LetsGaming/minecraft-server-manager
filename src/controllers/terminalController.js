@@ -13,6 +13,7 @@ function initWebSocket(app) {
 }
 
 function initTerminal(ws) {
+  console.log("WebSocket connection established.");
   const isWindows = os.platform() === "win32";
   if (isWindows) {
     ws.send("Web terminal is not supported on Windows.");

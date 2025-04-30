@@ -1,3 +1,5 @@
+import { isAuthed } from "./api.js";
+
 export function showToast(message) {
   toastQueue.push(message);
   if (!isToastVisible) {
@@ -33,7 +35,7 @@ function displayNextToast() {
   }, 3000);
 }
 
-export function showTab(tabId) {
+export async function showTab(tabId) {
   document
     .querySelectorAll(".tab-content")
     .forEach((el) => el.classList.remove("active"));
@@ -47,27 +49,30 @@ export function showTab(tabId) {
     ?.classList.add("active");
 
   if (tabId === "log") {
-    maybeShowTerminalInstead();
+    const authed = await isAuthed();
+    console.log("Log tab selected | authed:", authed);
+
+    replaceLogs(authed);
   }
 }
 
-function maybeShowTerminalInstead() {
-  const shouldShowTerminal = true; // Replace this with your actual condition
+function replaceLogs(showTerminal) {
   const terminalContainer = document.getElementById("terminal-container");
   const logOutput = document.getElementById("log-output");
   const logControls = document.getElementById("log-controls");
 
-  if (shouldShowTerminal) {
+  if (showTerminal) {
     logOutput.style.display = "none";
     logControls.style.display = "none";
     terminalContainer.style.display = "block";
     terminalContainer.style.overflow = "hidden";
-    
+
     if (!terminalContainer.hasChildNodes()) {
       loadTerminalInto(terminalContainer);
     }
   } else {
     terminalContainer.style.display = "none";
+    terminalContainer.innerHTML = ""; // Clear the terminal container
     logOutput.style.display = "block";
     logControls.style.display = "block";
   }

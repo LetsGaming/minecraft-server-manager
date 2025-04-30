@@ -24,6 +24,7 @@ app.use(express.static("public"));
 app.use(express.json());
 
 // Use Routers
+app.use("/", require("./src/routes/authRoutes"));
 app.use("/", require("./src/routes/serverRoutes"));
 app.use("/", require("./src/routes/backupRoutes"));
 app.use("/", require("./src/routes/logRoutes"));

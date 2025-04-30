@@ -1,4 +1,4 @@
-import { showToast } from "./ui.js";
+import { showTab, showToast } from "./ui.js";
 
 export const STATUS_UPDATE_INTERVAL_S = 120;
 export const STATUS_UPDATE_INTERVAL_MS = STATUS_UPDATE_INTERVAL_S * 1000;
@@ -60,4 +60,86 @@ export function loadBackups() {
       });
     });
   });
+}
+
+export function isTokenSet() {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    return false;
+  }
+  return true;
+}
+
+export async function isAuthed() {
+  const token = localStorage.getItem("token");
+  if (!token) return false;
+
+  try {
+    const res = await fetch("/isAuthenticated", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (res.status === 200) {
+      return true;
+    } else {
+      return false;
+    }
+  } catch (err) {
+    console.error(err);
+    localStorage.removeItem("token");
+    showToast("Session expired. Please log in again.");
+    showTab("login");
+    return false;
+  }
+}
+
+export function login() {
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+  fetch("/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  })
+    .then((res) => {
+      if (res.status === 200) {
+        const token = res
+          .json()
+          .then((data) => data.token)
+          .then((token) => {
+            localStorage.setItem("token", token);
+            showToast("Login successful!");
+          })
+          .then(() => {
+            showTab("control");
+            document.getElementById("logout-button").style.display = "block";
+          });
+        return token;
+      }
+      throw new Error("Login failed");
+    })
+    .catch((err) => showToast(err.message));
+}
+
+export function logout() {
+  fetch("/logout", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  })
+    .then((res) => {
+      if (res.status === 201) {
+        localStorage.removeItem("token");
+        window.location.href = "/";
+      } else {
+        throw new Error("Logout failed");
+      }
+    })
+    .catch((err) => showToast(err.message));
 }

@@ -1,4 +1,7 @@
 import {
+  isTokenSet,
+  login,
+  logout,
   sendCommand,
   loadBackups,
   getStatus,
@@ -18,6 +21,8 @@ function reloadAll() {
 window.showTab = showTab;
 window.reloadAll = reloadAll;
 window.sendCommand = sendCommand;
+window.login = login;
+window.logout = logout;
 
 document.addEventListener("DOMContentLoaded", () => {
   const logOutput = document.getElementById("log-output");
@@ -45,6 +50,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   setInterval(() => pollLogs(autoScroll), LOG_POLL_INTERVAL_MS);
   setInterval(getStatus, STATUS_UPDATE_INTERVAL_MS);
+
+  document.getElementById("logout-button").style.display = isTokenSet()
+    ? "block"
+    : "none";
 
   // Form submissions
   document.getElementById("backup-form").addEventListener("submit", (e) => {
