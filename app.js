@@ -1,7 +1,7 @@
 const express = require("express");
 const path = require("path");
-// Load config.json
 const config = require("./src/config/config.json");
+const { initWebSocket } = require("./src/controllers/terminalController");
 
 const app = express();
 const PORT = config.PORT || 3000;
@@ -18,24 +18,16 @@ const SCRIPTS = {
 
 global.SCRIPTS = SCRIPTS;
 
+initWebSocket(app);
+
 app.use(express.static("public"));
 app.use(express.json());
 
-// Routes
-const serverController = require("./src/controllers/serverController.js");
-const backupController = require("./src/controllers/backupController.js");
-const logController = require("./src/controllers/logController.js");
-
-// API Endpoints
-app.post("/start", serverController.start);
-app.post("/shutdown", serverController.shutdown);
-app.post("/restart", serverController.restart);
-app.post("/backup", backupController.createBackup);
-app.post("/restore", backupController.restoreBackup);
-app.get("/status", serverController.status);
-app.get("/log", logController.getLogs);
-app.get("/list-backups", backupController.listBackups);
-app.get("/download", backupController.downloadBackup);
+// Use Routers
+app.use("/", require("./src/routes/serverRoutes"));
+app.use("/", require("./src/routes/backupRoutes"));
+app.use("/", require("./src/routes/logRoutes"));
+app.use("/", require("./src/routes/terminalRoutes"));
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

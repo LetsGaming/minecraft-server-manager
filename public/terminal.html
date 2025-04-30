@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Terminal with xterm.js</title>
+  <style>
+    #terminal-container {
+      width: 100%;
+      height: 300px;
+      background-color: #000;
+    }
+  </style>
+  <!-- Include xterm.js styles -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css">
+  <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
+</head>
+<body>
+  <div id="terminal-container"></div>
+  <button id="close-terminal">Close Terminal</button>
+
+  <script>
+    // Initialize WebSocket connection
+    const socket = new WebSocket('ws://yourserver.com/terminal');
+
+    socket.onopen = function(event) {
+      console.log('WebSocket connection established');
+      term.open(document.getElementById('terminal-container')); // Open xterm.js inside the container
+    };
+
+    socket.onmessage = function(event) {
+      const terminalOutput = event.data;
+      term.write(terminalOutput);  // Write the server output to the terminal
+    };
+
+    socket.onerror = function(error) {
+      console.log('WebSocket Error: ' + error);
+    };
+
+    socket.onclose = function(event) {
+      console.log('WebSocket connection closed');
+    };
+
+    // Create a new terminal instance
+    const term = new Terminal({
+      cursorBlink: true,
+      rows: 15,
+      cols: 80
+    });
+
+    // Send user input to the backend through WebSocket
+    term.onData(function(data) {
+      socket.send(data);  // Send terminal input to the WebSocket server
+    });
+
+    // Send "close" command when the close button is clicked
+    document.getElementById("close-terminal").addEventListener("click", function() {
+      socket.send("close");  // Send close command to WebSocket server
+    });
+  </script>
+</body>
+</html>
