@@ -66,7 +66,7 @@ async function setupLogToggle() {
 
   const authed = await isAuthed();
   window.HIDE_LOGS = !authed;
-  logToggleButton.style.display = authed ? "block" : "none";
+  document.getElementById("log-toggle").style.display = authed;
   logToggleButton.checked = authed;
 
   logToggleButton.addEventListener("click", () => {
