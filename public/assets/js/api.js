@@ -1,5 +1,5 @@
 import { showTab, showToast } from "./ui.js";
-import { updateLoginView } from "./utils.js";
+import { updateLoginView, updateLogToggleView } from "./utils.js";
 
 export const STATUS_UPDATE_INTERVAL_S = 120;
 export const STATUS_UPDATE_INTERVAL_MS = STATUS_UPDATE_INTERVAL_S * 1000;
@@ -7,6 +7,11 @@ export const LOG_POLL_INTERVAL_S = 15;
 export const LOG_POLL_INTERVAL_MS = LOG_POLL_INTERVAL_S * 1000;
 
 const hideLogs = globalThis.HIDE_LOGS || false;
+
+function updateUi(bool) {
+  updateLogToggleView(bool);
+  updateLoginView(bool);
+}
 
 export function fetchWithErrorHandling(url, options = {}) {
   const token = localStorage.getItem("token");
@@ -125,9 +130,7 @@ export function login() {
           })
           .then(() => {
             showTab("control");
-            document.getElementById("logout-button").style.display = "block";
-            document.getElementById("login-tab-button").style.display = "none";
-            updateLoginView(true);
+            updateUi(true);
           });
         return token;
       }
@@ -148,7 +151,7 @@ export function logout() {
       if (res.status === 201) {
         localStorage.removeItem("token");
         window.location.href = "/";
-        updateLoginView(false);
+        updateUi(false);
       } else {
         throw new Error("Logout failed");
       }

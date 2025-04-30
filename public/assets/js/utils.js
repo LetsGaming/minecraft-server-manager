@@ -8,7 +8,16 @@ export function isTokenSet() {
   return true;
 }
 
-export function updateLoginView(show, updateToggle = true, useIsAuthed = false) {
+export function updateLogToggleView(show) {
+  const logToggleButton = document.getElementById("log-toggle-button");
+  logToggleButton.style.display = show ? "block" : "none";
+}
+
+export async function updateLoginView(
+  show,
+  updateToggle = true,
+  useIsAuthed = false
+) {
   const logToggleButton = document.getElementById("log-toggle-button");
   const logOutput = document.getElementById("log-output");
   const logControls = document.querySelectorAll(".log-control-inputs");
@@ -20,7 +29,8 @@ export function updateLoginView(show, updateToggle = true, useIsAuthed = false) 
 
   // Toggle log output and terminal
   if (logOutput) logOutput.style.display = shouldShowLogs ? "block" : "none";
-  if (terminalContainer) terminalContainer.style.display = shouldShowLogs ? "none" : "block";
+  if (terminalContainer)
+    terminalContainer.style.display = shouldShowLogs ? "none" : "block";
 
   // Toggle additional log controls
   logControls.forEach((el) => {
@@ -33,7 +43,7 @@ export function updateLoginView(show, updateToggle = true, useIsAuthed = false) 
   }
 
   // Update visibility of login-required elements if needed
-  updateTabsView(shouldShowLogs, useIsAuthed);
+  await updateTabsView(shouldShowLogs, useIsAuthed);
 }
 
 export async function updateTabsView(showLoginRequired, useIsAuthed = false) {
