@@ -53,7 +53,7 @@ export async function showTab(tabId) {
 
   if (tabId === "log") {
     const authed = await isAuthed();
-    
+
     replaceLogs(authed);
   }
 }
@@ -64,8 +64,8 @@ function replaceLogs(showTerminal) {
   const logControls = document.querySelectorAll(".log-control-inputs");
 
   if (showTerminal) {
+    logControls.forEach((el) => (el.style.display = "none"));
     logOutput.style.display = "none";
-    logControls.style.display = "none";
     terminalContainer.style.display = "block";
     terminalContainer.style.overflow = "hidden";
 
