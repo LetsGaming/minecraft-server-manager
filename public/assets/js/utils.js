@@ -1,3 +1,5 @@
+import { isAuthed } from "./api";
+
 export function isTokenSet() {
   const token = localStorage.getItem("token");
   if (!token) {
@@ -31,10 +33,10 @@ export function updateLogsView(show, updateToggle = true) {
   updateTabsView(shouldShow); // Update the tabs view
 }
 
-export function updateTabsView(showLoginRequired) {
+export async function updateTabsView(showLoginRequired, useIsAuthed = false) {
   const logoutButton = document.getElementById("logout-button");
   const loginRequiredElements = document.querySelectorAll(".login-required");
-  const tokenSet = isTokenSet();
+  const tokenSet = useIsAuthed ? isTokenSet() : await isAuthed();
   const loginRequired = !!showLoginRequired && tokenSet;
 
   loginRequiredElements.forEach((el) => {
@@ -42,6 +44,6 @@ export function updateTabsView(showLoginRequired) {
   });
 
   if (logoutButton) {
-    logoutButton.style.display = loginRequired ? "none" : "block";
+    logoutButton.style.display = loginRequired ? "" : "block";
   }
 }

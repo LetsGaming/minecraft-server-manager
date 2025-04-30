@@ -12,7 +12,7 @@ import {
 
 import { showToast, showTab } from "./ui.js";
 
-import { updateLogsView } from "./utils.js";
+import { updateLogsView, updateTabsView } from "./utils.js";
 
 window.HIDE_LOGS = false;
 
@@ -55,6 +55,7 @@ async function setupLoginUi() {
 
   const authed = await isAuthed();
   updateLogsView(!!authed);
+  updateTabsView(authed, true);
 
   logToggleButton.addEventListener("click", (e) => {
     const showLogs = e.target.checked;
