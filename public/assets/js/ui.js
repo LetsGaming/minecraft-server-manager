@@ -80,7 +80,7 @@ function replaceLogs(showTerminal) {
 
 function loadTerminalInto(container) {
   const script = document.createElement("script");
-  script.src = "/assets/js/terminal.js";
+  script.src = "./assets/js/terminal.js";
   script.onload = () => {
     terminal();
   };
