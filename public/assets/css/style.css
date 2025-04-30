@@ -222,6 +222,7 @@ input[type="checkbox"]:focus-visible {
   width: 100%; /* Ensure full width */
   box-sizing: border-box; /* Prevent padding from expanding beyond container width */
   position: relative; /* Keep inside the parent container */
+  margin: 1em 0; /* Add some margin for spacing */
 }
 
 #terminal {

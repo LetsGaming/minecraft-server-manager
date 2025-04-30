@@ -9,12 +9,25 @@ export const LOG_POLL_INTERVAL_MS = LOG_POLL_INTERVAL_S * 1000;
 const hideLogs = globalThis.HIDE_LOGS || false;
 
 export function fetchWithErrorHandling(url, options = {}) {
-  return fetch(url, options)
+  const token = localStorage.getItem("token");
+  const headers = {
+    "Content-Type": "application/json",
+    ...options.headers,
+  };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return fetch(url, { ...options, headers })
     .then((response) => {
-      if (response.ok) return response.json();
-      return Promise.reject("Error: " + response.statusText);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
     })
-    .catch((err) => showToast(err));
+    .catch((error) => {
+      console.error("Fetch error:", error);
+      showToast("Error fetching data. Please try again.");
+    });
 }
 
 export function sendCommand(command) {

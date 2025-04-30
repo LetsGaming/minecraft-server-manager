@@ -1,10 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const serverController = require("../controllers/serverController");
+const { isAuthenticated } = require("../controllers/authController");
 
-router.post("/start", serverController.start);
-router.post("/shutdown", serverController.shutdown);
-router.post("/restart", serverController.restart);
+router.post("/start", isAuthenticated, serverController.start);
+router.post("/shutdown", isAuthenticated, serverController.shutdown);
+router.post("/restart", isAuthenticated, serverController.restart);
 router.get("/status", serverController.status);
 
 module.exports = router;

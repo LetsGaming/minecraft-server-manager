@@ -28,11 +28,16 @@
           >
             Login
           </button>
-          <button class="tab-button active" onclick="showTab('control')">
+          <button
+            class="tab-button login-required"
+            onclick="showTab('control')"
+          >
             Server Control
           </button>
-          <button class="tab-button" onclick="showTab('log')">Logs</button>
-          <button class="tab-button" onclick="showTab('backup')">
+          <button class="tab-button active" onclick="showTab('log')">
+            Logs
+          </button>
+          <button class="tab-button login-required" onclick="showTab('backup')">
             Backups
           </button>
           <button
@@ -47,7 +52,7 @@
         <div id="status">Status: None</div>
       </header>
 
-      <div id="control" class="tab-content container active">
+      <div id="control" class="tab-content container">
         <h2>Server Controls</h2>
         <button class="action-button" onclick="sendCommand('start')">
           Start Server
@@ -74,7 +79,7 @@
         </form>
       </div>
 
-      <div id="log" class="tab-content container">
+      <div id="log" class="tab-content container active">
         <h2>Live Logs</h2>
 
         <div id="log-controls">

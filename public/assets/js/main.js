@@ -41,6 +41,9 @@ function toggleLoginUi() {
   document.getElementById("login-tab-button").style.display = loggedIn
     ? "none"
     : "block";
+  document.querySelectorAll(".login-required").forEach((el) => {
+    el.style.display = loggedIn ? "block" : "none";
+  });
 }
 
 function setupAutoScroll(logOutput, checkbox) {
@@ -70,7 +73,6 @@ async function setupLogToggle() {
   logToggleButton.addEventListener("click", (e) => {
     const isHidden = e.target.checked;
     updateLogsView(!isHidden, false);
-
   });
 }
 
@@ -88,11 +90,15 @@ function setupFormHandlers() {
 
 async function handleBackup(e) {
   e.preventDefault();
+  const token = localStorage.getItem("token");
   const archive = document.getElementById("archive-option").checked;
   try {
     await fetch("/backup", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({ archive }),
     });
     showToast("Backup created successfully!");
@@ -105,10 +111,14 @@ async function handleRestore(e) {
   e.preventDefault();
   const file = document.getElementById("backup-select").value;
   if (!file) return showToast("Please select a backup file to restore.");
+  const token = localStorage.getItem("token");
   try {
     await fetch("/restore", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({ file }),
     });
     showToast("Backup restored successfully!");
@@ -121,9 +131,15 @@ async function handleDownload(e) {
   e.preventDefault();
   const file = document.getElementById("download-file").value;
   if (!file) return showToast("Please select a backup file to download.");
-
+  const token = localStorage.getItem("token");
   try {
-    const res = await fetch(`/download?file=${file}`);
+    const res = await fetch(`/download?file=${file}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
     if (!res.ok) throw new Error("Error downloading file: " + res.statusText);
     const blob = await res.blob();
 
