@@ -11,7 +11,7 @@ import {
 
 import { showToast, showTab } from "./ui.js";
 
-import { updateLoginView, updateLogToggleView } from "./utils.js";
+import { updateLoginView, updateLogToggleView, updateLogsView } from "./utils.js";
 
 window.HIDE_LOGS = false;
 

@@ -8,6 +8,23 @@ export function isTokenSet() {
   return true;
 }
 
+export function updateLogsView(showLogs) {
+  const logOutput = document.getElementById("log-output");
+  const logControls = document.querySelectorAll(".log-control-inputs");
+  const terminalContainer = document.getElementById("terminal-container");
+
+  const shouldShowLogs = !!showLogs; // Normalize to boolean
+  window.HIDE_LOGS = !shouldShowLogs;
+  // Toggle log output and terminal
+  if (logOutput) logOutput.style.display = shouldShowLogs ? "block" : "none";
+  if (terminalContainer)
+    terminalContainer.style.display = shouldShowLogs ? "none" : "block";
+  // Toggle additional log controls
+  logControls.forEach((el) => {
+    if (el) el.style.display = shouldShowLogs ? "block" : "none";
+  });
+}
+
 export function updateLogToggleView(show) {
   const logToggleButton = document.getElementById("log-toggle-container");
   logToggleButton.style.display = show ? "block" : "none";
