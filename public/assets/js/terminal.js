@@ -16,10 +16,9 @@ export function terminal() {
     terminal.open(document.getElementById("terminal"));
     fitAddon.fit();
 
-    const protocol = location.protocol === "https:" ? "wss" : "ws";
     const token = localStorage.getItem("token");
     const socket = new WebSocket(
-      `${protocol}://localhost:3000/ws/terminal?token=${token}`
+      `ws://localhost:3000/ws/terminal?token=${token}`
     );
 
     socket.addEventListener("open", () => {
