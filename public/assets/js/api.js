@@ -121,7 +121,7 @@ export function login() {
             showTab("control");
             document.getElementById("logout-button").style.display = "block";
             document.getElementById("login-tab-button").style.display = "none";
-            global.HIDE_LOGS = true;
+            window.HIDE_LOGS = true;
           });
         return token;
       }
@@ -142,7 +142,7 @@ export function logout() {
       if (res.status === 201) {
         localStorage.removeItem("token");
         window.location.href = "/";
-        global.HIDE_LOGS = false;
+        window.HIDE_LOGS = false;
       } else {
         throw new Error("Logout failed");
       }

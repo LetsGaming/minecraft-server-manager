@@ -12,7 +12,7 @@ import {
 
 import { showToast, showTab } from "./ui.js";
 
-global.HIDE_LOGS = false;
+window.HIDE_LOGS = false;
 
 // Public window-bound methods
 Object.assign(window, {
@@ -70,7 +70,7 @@ function setupLogToggle() {
       (el) => (el.style.display = isHidden ? "block" : "none")
     );
     logToggleButton.textContent = isHidden ? "Hide Logs" : "Show Logs";
-    global.HIDE_LOGS = !isHidden;
+    window.HIDE_LOGS = !isHidden;
   });
 }
 
