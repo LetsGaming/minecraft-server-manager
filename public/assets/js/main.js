@@ -12,7 +12,7 @@ import {
 
 import { showToast, showTab } from "./ui.js";
 
-import { updateLogsView, updateTabsView } from "./utils.js";
+import { updateLogsView, updateLoginView } from "./utils.js";
 
 window.HIDE_LOGS = false;
 
@@ -51,13 +51,7 @@ function setupAutoScroll(logOutput, checkbox) {
 }
 
 async function setupLoginUi() {
-  const logToggleContainer = document.getElementById("log-toggle-container");
   const logToggleButton = document.getElementById("log-toggle-button");
-
-  const authed = await isAuthed();
-  logToggleContainer.style.display = authed ? "block" : "none";
-  updateLogsView(authed);
-  updateTabsView(authed, true);
 
   logToggleButton.addEventListener("click", (e) => {
     const showLogs = e.target.checked;
@@ -145,11 +139,16 @@ async function handleDownload(e) {
   }
 }
 
-function initializeApp() {
+async function initializeApp() {
   const logOutput = document.getElementById("log-output");
   const autoScrollCheckbox = document.getElementById("auto-scroll-checkbox");
+
+  // Hide login-required elements at startup
+  updateLoginView(false, true, true);
+
   const getAutoScroll = setupAutoScroll(logOutput, autoScrollCheckbox);
-  setupLoginUi();
+
+  setupLoginUi(); // this will re-check actual login state
 
   loadBackups();
   getStatus();

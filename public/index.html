@@ -22,7 +22,7 @@
         </button>
         <div class="tab-buttons">
           <button
-            class="tab-button"
+            class="tab-button active"
             id="login-tab-button"
             onclick="showTab('login')"
           >
@@ -34,9 +34,7 @@
           >
             Server Control
           </button>
-          <button class="tab-button active" onclick="showTab('log')">
-            Logs
-          </button>
+          <button class="tab-button" onclick="showTab('log')">Logs</button>
           <button class="tab-button login-required" onclick="showTab('backup')">
             Backups
           </button>
@@ -65,7 +63,7 @@
         </button>
       </div>
 
-      <div class="tab-content container" id="login">
+      <div class="tab-content container active" id="login">
         <h2>Login</h2>
         <form onsubmit="login(); return false;">
           <input type="text" id="username" placeholder="Username" required />
@@ -79,7 +77,7 @@
         </form>
       </div>
 
-      <div id="log" class="tab-content container active">
+      <div id="log" class="tab-content container">
         <h2>Live Logs</h2>
 
         <div id="log-controls">

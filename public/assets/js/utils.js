@@ -8,7 +8,7 @@ export function isTokenSet() {
   return true;
 }
 
-export function updateLogsView(show, updateToggle = true) {
+export function updateLoginView(show, updateToggle = true, useIsAuthed = false) {
   const logToggleButton = document.getElementById("log-toggle-button");
   const logOutput = document.getElementById("log-output");
   const logControls = document.querySelectorAll(".log-control-inputs");
@@ -33,7 +33,7 @@ export function updateLogsView(show, updateToggle = true) {
   }
 
   // Update visibility of login-required elements if needed
-  updateTabsView(shouldShowLogs);
+  updateTabsView(shouldShowLogs, useIsAuthed);
 }
 
 export async function updateTabsView(showLoginRequired, useIsAuthed = false) {

@@ -1,5 +1,5 @@
 import { showTab, showToast } from "./ui.js";
-import { updateLogsView } from "./utils.js";
+import { updateLoginView } from "./utils.js";
 
 export const STATUS_UPDATE_INTERVAL_S = 120;
 export const STATUS_UPDATE_INTERVAL_MS = STATUS_UPDATE_INTERVAL_S * 1000;
@@ -127,7 +127,7 @@ export function login() {
             showTab("control");
             document.getElementById("logout-button").style.display = "block";
             document.getElementById("login-tab-button").style.display = "none";
-            updateLogsView(true);
+            updateLoginView(true);
           });
         return token;
       }
@@ -148,7 +148,7 @@ export function logout() {
       if (res.status === 201) {
         localStorage.removeItem("token");
         window.location.href = "/";
-        updateLogsView(false);
+        updateLoginView(false);
       } else {
         throw new Error("Logout failed");
       }
