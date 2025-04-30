@@ -1,4 +1,5 @@
 import { isAuthed } from "./api.js";
+import { terminal } from "./terminal.js";
 
 export function showToast(message) {
   toastQueue.push(message);
@@ -78,11 +79,6 @@ function replaceLogs(showTerminal) {
   }
 }
 
-function loadTerminalInto(container) {
-  const script = document.createElement("script");
-  script.src = "./assets/js/terminal.js";
-  script.onload = () => {
-    terminal();
-  };
-  container.appendChild(script);
+function loadTerminalInto() {
+  terminal();
 }
