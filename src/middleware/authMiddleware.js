@@ -1,9 +1,11 @@
 const { tokenStore } = require("../controllers/authController");
 
-function isAuthenticated(req, res, next) {
+exports.isAuthenticated = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ message: "Missing or invalid Authorization header" });
+    return res
+      .status(401)
+      .json({ message: "Missing or invalid Authorization header" });
   }
 
   const token = authHeader.split(" ")[1];
@@ -16,6 +18,4 @@ function isAuthenticated(req, res, next) {
   // Attach the username to the request for downstream use
   req.user = { username };
   next();
-}
-
-module.exports = isAuthenticated;
+};

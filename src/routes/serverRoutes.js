@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const serverController = require("../controllers/serverController");
-const { isAuthenticated } = require("../controllers/authController");
+const { isAuthenticated } = require("../middleware/authMiddleware");
 
 router.post("/start", isAuthenticated, serverController.start);
 router.post("/shutdown", isAuthenticated, serverController.shutdown);

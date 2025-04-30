@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const backupController = require("../controllers/backupController");
-const { isAuthenticated } = require("../controllers/authController");
+const { isAuthenticated } = require("../middleware/authMiddleware");
 
 router.post("/backup", isAuthenticated, backupController.createBackup);
 router.post("/restore", isAuthenticated, backupController.restoreBackup);
