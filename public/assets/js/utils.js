@@ -65,6 +65,7 @@ export async function updateLoginView(
 
 export async function updateTabsView(showLoginRequired, useIsAuthed = false) {
   const logoutButton = document.getElementById("logout-button");
+  const loginTabButton = document.getElementById("login-tab-button");
   const loginRequiredElements = document.querySelectorAll(".login-required");
   const isLoggedIn = useIsAuthed ? isTokenSet() : await isAuthed();
 
@@ -73,6 +74,10 @@ export async function updateTabsView(showLoginRequired, useIsAuthed = false) {
   loginRequiredElements.forEach((el) => {
     el.style.display = shouldShowProtected ? "block" : "none";
   });
+
+  if (loginTabButton) {
+    loginTabButton.style.display = shouldShowProtected ? "none" : "block";
+  }
 
   if (logoutButton) {
     logoutButton.style.display = shouldShowProtected ? "block" : "none";
