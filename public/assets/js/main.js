@@ -9,7 +9,19 @@ import {
   LOG_POLL_INTERVAL_MS,
   STATUS_UPDATE_INTERVAL_MS,
 } from "./api.js";
+
 import { showToast, showTab } from "./ui.js";
+
+global.HIDE_LOGS = false;
+
+// Public window-bound methods
+Object.assign(window, {
+  showTab,
+  reloadAll,
+  sendCommand,
+  login,
+  logout,
+});
 
 function reloadAll() {
   loadBackups();
@@ -18,20 +30,20 @@ function reloadAll() {
   showToast("Reloaded!");
 }
 
-window.showTab = showTab;
-window.reloadAll = reloadAll;
-window.sendCommand = sendCommand;
-window.login = login;
-window.logout = logout;
+function toggleLoginUi() {
+  const loggedIn = isTokenSet();
+  document.getElementById("logout-button").style.display = loggedIn
+    ? "block"
+    : "none";
+  document.getElementById("login-tab-button").style.display = loggedIn
+    ? "none"
+    : "block";
+}
 
-document.addEventListener("DOMContentLoaded", () => {
-  const logOutput = document.getElementById("log-output");
-  const autoScrollCheckbox = document.getElementById("auto-scroll-checkbox");
-
+function setupAutoScroll(logOutput, checkbox) {
   let autoScroll = true;
 
-  // Setup auto-scroll behavior
-  autoScrollCheckbox.addEventListener("change", (e) => {
+  checkbox.addEventListener("change", (e) => {
     autoScroll = e.target.checked;
   });
 
@@ -39,70 +51,110 @@ document.addEventListener("DOMContentLoaded", () => {
     const atBottom =
       logOutput.scrollHeight - logOutput.scrollTop <=
       logOutput.clientHeight + 10;
-    autoScrollCheckbox.checked = atBottom;
+    checkbox.checked = atBottom;
     autoScroll = atBottom;
   });
 
-  // Polling and loading
-  loadBackups();
-  getStatus();
-  pollLogs(autoScroll);
+  return () => autoScroll; // return function to access current state
+}
 
-  setInterval(() => pollLogs(autoScroll), LOG_POLL_INTERVAL_MS);
-  setInterval(getStatus, STATUS_UPDATE_INTERVAL_MS);
+function setupLogToggle() {
+  const logToggleButton = document.getElementById("log-toggle-button");
+  const logOutput = document.getElementById("log-output");
+  const logControls = document.querySelectorAll(".log-control-inputs");
 
-  document.getElementById("logout-button").style.display = isTokenSet()
-    ? "block"
-    : "none";
+  logToggleButton.addEventListener("click", () => {
+    const isHidden = logOutput.style.display === "none";
+    logOutput.style.display = isHidden ? "block" : "none";
+    logControls.forEach(
+      (el) => (el.style.display = isHidden ? "block" : "none")
+    );
+    logToggleButton.textContent = isHidden ? "Hide Logs" : "Show Logs";
+    global.HIDE_LOGS = !isHidden;
+  });
+}
 
-  // Form submissions
-  document.getElementById("backup-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const archive = document.getElementById("archive-option").checked;
-    fetch("/backup", {
+function setupFormHandlers() {
+  document
+    .getElementById("backup-form")
+    .addEventListener("submit", handleBackup);
+  document
+    .getElementById("restore-form")
+    .addEventListener("submit", handleRestore);
+  document
+    .getElementById("download-form")
+    .addEventListener("submit", handleDownload);
+}
+
+async function handleBackup(e) {
+  e.preventDefault();
+  const archive = document.getElementById("archive-option").checked;
+  try {
+    await fetch("/backup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ archive }),
-    })
-      .then((r) => r.json())
-      .then(() => showToast("Backup created successfully!"))
-      .catch((err) => showToast("Error: " + err));
-  });
+    });
+    showToast("Backup created successfully!");
+  } catch (err) {
+    showToast("Error: " + err);
+  }
+}
 
-  document.getElementById("restore-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const file = document.getElementById("backup-select").value;
-    if (!file) return showToast("Please select a backup file to restore.");
-    fetch("/restore", {
+async function handleRestore(e) {
+  e.preventDefault();
+  const file = document.getElementById("backup-select").value;
+  if (!file) return showToast("Please select a backup file to restore.");
+  try {
+    await fetch("/restore", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ file }),
-    })
-      .then((r) => r.json())
-      .then(() => showToast("Backup restored successfully!"))
-      .catch((err) => showToast("Error: " + err));
-  });
+    });
+    showToast("Backup restored successfully!");
+  } catch (err) {
+    showToast("Error: " + err);
+  }
+}
 
-  document.getElementById("download-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const file = document.getElementById("download-file").value;
-    if (!file) return showToast("Please select a backup file to download.");
+async function handleDownload(e) {
+  e.preventDefault();
+  const file = document.getElementById("download-file").value;
+  if (!file) return showToast("Please select a backup file to download.");
 
-    fetch(`/download?file=${file}`)
-      .then((r) => {
-        if (!r.ok) throw new Error("Error downloading file: " + r.statusText);
-        return r.blob();
-      })
-      .then((blob) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = file;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-      })
-      .catch((err) => showToast(err));
-  });
-});
+  try {
+    const res = await fetch(`/download?file=${file}`);
+    if (!res.ok) throw new Error("Error downloading file: " + res.statusText);
+    const blob = await res.blob();
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = file;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    showToast("Error: " + err);
+  }
+}
+
+function initializeApp() {
+  const logOutput = document.getElementById("log-output");
+  const autoScrollCheckbox = document.getElementById("auto-scroll-checkbox");
+  const getAutoScroll = setupAutoScroll(logOutput, autoScrollCheckbox);
+  setupLogToggle();
+
+  loadBackups();
+  getStatus();
+  pollLogs(getAutoScroll());
+
+  setInterval(() => pollLogs(getAutoScroll()), LOG_POLL_INTERVAL_MS);
+  setInterval(getStatus, STATUS_UPDATE_INTERVAL_MS);
+
+  toggleLoginUi();
+  setupFormHandlers();
+}
+
+document.addEventListener("DOMContentLoaded", initializeApp);

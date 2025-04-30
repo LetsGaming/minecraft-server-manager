@@ -53,8 +53,7 @@ export async function showTab(tabId) {
 
   if (tabId === "log") {
     const authed = await isAuthed();
-    console.log("Log tab selected | authed:", authed);
-
+    
     replaceLogs(authed);
   }
 }
@@ -62,7 +61,7 @@ export async function showTab(tabId) {
 function replaceLogs(showTerminal) {
   const terminalContainer = document.getElementById("terminal-container");
   const logOutput = document.getElementById("log-output");
-  const logControls = document.getElementById("log-controls");
+  const logControls = document.querySelectorAll(".log-control-inputs");
 
   if (showTerminal) {
     logOutput.style.display = "none";

@@ -21,7 +21,13 @@
           Logout
         </button>
         <div class="tab-buttons">
-          <button class="tab-button" id="login-tab-button" onclick="showTab('login')">Login</button>
+          <button
+            class="tab-button"
+            id="login-tab-button"
+            onclick="showTab('login')"
+          >
+            Login
+          </button>
           <button class="tab-button active" onclick="showTab('control')">
             Server Control
           </button>
@@ -72,11 +78,27 @@
         <h2>Live Logs</h2>
 
         <div id="log-controls">
-          <label for="log-length">Logs Length</label>
-          <input type="number" id="log-length" value="100" min="1" max="1000" />
+          <!-- Existing controls -->
+          <div class="log-control-inputs">
+            <label for="log-length">Logs Length</label>
+            <input
+              type="number"
+              id="log-length"
+              value="100"
+              min="1"
+              max="1000"
+            />
+          </div>
 
-          <label for="auto-scroll-checkbox">Auto Scroll</label>
-          <input type="checkbox" id="auto-scroll-checkbox" checked />
+          <div class="log-control-inputs">
+            <label for="auto-scroll-checkbox">Auto Scroll</label>
+            <input type="checkbox" id="auto-scroll-checkbox" checked />
+          </div>
+
+          <div>
+            <label for="log-toggle-button">Terminal View</label>
+            <input type="checkbox" id="log-toggle-button" />
+          </div>
         </div>
 
         <pre id="log-output">Loading logs...</pre>
