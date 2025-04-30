@@ -4,12 +4,30 @@ export function updateLogsView(show, updateToggle = true) {
   const logControls = document.querySelectorAll(".log-control-inputs");
   const terminalContainer = document.getElementById("terminal-container");
 
-  window.HIDE_LOGS = !show;
-  logOutput.style.display = show ? "block" : "none";
-  terminalContainer.style.display = show ? "none" : "block";
-  logControls.forEach((el) => (el.style.display = show ? "block" : "none"));
+  const shouldShow = !!show; // ensures boolean
 
-  if (updateToggle) {
-    logToggleButton.checked = show;
+  window.HIDE_LOGS = !shouldShow;
+
+  if (logOutput) logOutput.style.display = shouldShow ? "block" : "none";
+  if (terminalContainer)
+    terminalContainer.style.display = shouldShow ? "none" : "block";
+
+  logControls.forEach((el) => {
+    if (el) el.style.display = shouldShow ? "block" : "none";
+  });
+
+  if (updateToggle && logToggleButton) {
+    logToggleButton.checked = shouldShow;
   }
+
+  updateTabsView(shouldShow); // Update the tabs view
+}
+
+export function updateTabsView(showLoginRequired) {
+  const loginRequiredElements = document.querySelectorAll(".login-required");
+  const loginRequired = !!showLoginRequired;
+
+  loginRequiredElements.forEach((el) => {
+    el.style.display = loginRequired ? "block" : "none";
+  });
 }

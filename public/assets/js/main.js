@@ -13,7 +13,7 @@ import {
 
 import { showToast, showTab } from "./ui.js";
 
-import { updateLogsView } from "./utils.js";
+import { updateLogsView, updateTabsView } from "./utils.js";
 
 window.HIDE_LOGS = false;
 
@@ -31,19 +31,6 @@ function reloadAll() {
   getStatus();
   pollLogs();
   showToast("Reloaded!");
-}
-
-function toggleLoginUi() {
-  const loggedIn = isTokenSet();
-  document.getElementById("logout-button").style.display = loggedIn
-    ? "block"
-    : "none";
-  document.getElementById("login-tab-button").style.display = loggedIn
-    ? "none"
-    : "block";
-  document.querySelectorAll(".login-required").forEach((el) => {
-    el.style.display = loggedIn ? "block" : "none";
-  });
 }
 
 function setupAutoScroll(logOutput, checkbox) {
@@ -64,15 +51,15 @@ function setupAutoScroll(logOutput, checkbox) {
   return () => autoScroll; // return function to access current state
 }
 
-async function setupLogToggle() {
+async function setupLoginUi() {
   const logToggleButton = document.getElementById("log-toggle-button");
 
   const authed = await isAuthed();
   updateLogsView(!!authed);
 
   logToggleButton.addEventListener("click", (e) => {
-    const isHidden = e.target.checked;
-    updateLogsView(!isHidden, false);
+    const showLogs = e.target.checked;
+    updateLogsView(showLogs, false);
   });
 }
 
@@ -160,7 +147,7 @@ function initializeApp() {
   const logOutput = document.getElementById("log-output");
   const autoScrollCheckbox = document.getElementById("auto-scroll-checkbox");
   const getAutoScroll = setupAutoScroll(logOutput, autoScrollCheckbox);
-  setupLogToggle();
+  setupLoginUi();
 
   loadBackups();
   getStatus();
@@ -169,7 +156,6 @@ function initializeApp() {
   setInterval(() => pollLogs(getAutoScroll()), LOG_POLL_INTERVAL_MS);
   setInterval(getStatus, STATUS_UPDATE_INTERVAL_MS);
 
-  toggleLoginUi();
   setupFormHandlers();
 }
 
