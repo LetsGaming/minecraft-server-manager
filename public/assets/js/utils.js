@@ -9,7 +9,7 @@ export function isTokenSet() {
 }
 
 export function updateLogToggleView(show) {
-  const logToggleButton = document.getElementById("log-toggle-button");
+  const logToggleButton = document.getElementById("log-toggle-container");
   logToggleButton.style.display = show ? "block" : "none";
 }
 
