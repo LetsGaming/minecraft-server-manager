@@ -18,7 +18,7 @@ export function terminal() {
 
     const token = localStorage.getItem("token");
     const socket = new WebSocket(
-      `ws://localhost:3000/ws/terminal?token=${token}`
+      `ws://${location.host}/ws/terminal?token=${token}`
     );
 
     socket.addEventListener("open", () => {
