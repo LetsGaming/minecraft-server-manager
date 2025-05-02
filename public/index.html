@@ -50,15 +50,29 @@
       <div id="status">Status: None</div>
       <div id="control" class="tab-content container">
         <h2>Server Controls</h2>
-        <button class="action-button" onclick="sendCommand('start')">
-          Start Server
-        </button>
-        <button class="action-button" onclick="sendCommand('restart')">
-          Restart Server
-        </button>
-        <button class="action-button" onclick="sendCommand('shutdown')">
-          Shutdown Server
-        </button>
+        <div class="control-buttons-container">
+          <button
+            id="start-button"
+            class="action-button control-button"
+            onclick="sendCommand('start')"
+          >
+            Start Server
+          </button>
+          <button
+            id="restart-button"
+            class="action-button control-button"
+            onclick="sendCommand('restart')"
+          >
+            Restart Server
+          </button>
+          <button
+            id="stop-button"
+            class="action-button control-button"
+            onclick="sendCommand('shutdown')"
+          >
+            Shutdown Server
+          </button>
+        </div>
       </div>
 
       <div class="tab-content container active" id="login">
