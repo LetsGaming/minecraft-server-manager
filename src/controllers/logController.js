@@ -14,20 +14,22 @@ module.exports = {
     );
 
     if (!fs.existsSync(logFile)) {
-      return serveLogFile(fallbackLogFile, res);
+      return serveLogFile(fallbackLogFile, res, undefined, true); // forceFull = true
     }
 
     serveLogFile(logFile, res, length);
   },
 };
 
-function serveLogFile(filePath, res, length = LOG_LINES) {
+function serveLogFile(filePath, res, length = LOG_LINES, forceFull = false) {
   fs.readFile(filePath, "utf8", (err, data) => {
     if (err) {
       return res.status(500).json({ error: "Error reading log file." });
     }
     const lines = data.trim().split("\n");
-    const lastLines = lines.slice(-length).join("\n");
-    res.type("text/plain").send(lastLines);
+    const output = forceFull
+      ? lines.join("\n")
+      : lines.slice(-length).join("\n");
+    res.type("text/plain").send(output);
   });
 }
