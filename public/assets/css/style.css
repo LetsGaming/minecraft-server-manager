@@ -9,7 +9,6 @@
   --spacing-unit: 16px;
   --radius: 8px;
   --shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-  --background-image: url("https://static.wikia.nocookie.net/minecraft_gamepedia/images/9/9c/Smooth_Basalt_%28texture%29_JE1.png/revision/latest?cb=20210224201425");
 }
 
 .align-middle {
@@ -28,9 +27,6 @@ body {
   margin: 0;
   font-family: var(--font-main);
   background-color: var(--color-secondary);
-  background-image: var(--background-image);
-  background-size: 64px 64px;
-  background-repeat: repeat;
   color: #e0e0e0;
   padding: var(--spacing-unit);
   display: flex;
@@ -123,6 +119,10 @@ header {
 }
 
 /* === Tabs === */
+.login-required, .logout-button {
+  display: none;
+}
+
 .tab-buttons {
   width: 100%;
   margin-top: 10px;
