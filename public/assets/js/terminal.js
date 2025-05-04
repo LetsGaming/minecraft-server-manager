@@ -5,8 +5,8 @@ export function terminal() {
       fontSize: 14,
       cursorBlink: true,
       theme: {
-        background: "#2d2d2d",
-        foreground: "#a8e6a1",
+        background: "#1b1b1b",
+        foreground: "#9ccc65",
       },
     });
 
