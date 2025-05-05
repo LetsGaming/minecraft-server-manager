@@ -1,4 +1,5 @@
 import { isAuthed } from "./api.js";
+import { showTab } from "./ui.js";
 
 export function isTokenSet() {
   const token = localStorage.getItem("token");
@@ -13,7 +14,7 @@ export function updateLogsView(showLogs) {
   const logControls = document.querySelectorAll(".log-control-inputs");
   const terminalContainer = document.getElementById("terminal-container");
 
-  const shouldShowLogs = !!showLogs; // Normalize to boolean
+  const shouldShowLogs = Boolean(showLogs); // Normalize to boolean
   window.HIDE_LOGS = !shouldShowLogs;
   // Toggle log output and terminal
   if (logOutput) logOutput.style.display = shouldShowLogs ? "block" : "none";
@@ -81,5 +82,9 @@ export async function updateTabsView(showLoginRequired, useIsAuthed = false) {
 
   if (logoutButton) {
     logoutButton.style.display = shouldShowProtected ? "block" : "none";
+  }
+
+  if (isLoggedIn) {
+    showTab("log");
   }
 }

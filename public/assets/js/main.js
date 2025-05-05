@@ -58,15 +58,15 @@ async function setupUi() {
   const authed = await isAuthed();
   updateLogToggleView(authed); // Hide log toggle at startup
   // Hide login-required elements at startup
-  await updateLoginView(authed, true);
+  await updateLoginView(authed);
 }
 
 async function setuplogToggle() {
   const logToggleButton = document.getElementById("log-toggle-button");
 
   logToggleButton.addEventListener("click", (e) => {
-    const showLogs = e.target.checked;
-    updateLogsView(showLogs, false);
+    const showTerminal = e.target.checked;
+    updateLogsView(!showTerminal, false);
   });
 }
 
