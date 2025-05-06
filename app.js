@@ -1,6 +1,7 @@
 const express = require("express");
 const expressWs = require("express-ws");
 const path = require("path");
+const http = require("http");
 const config = require("./src/config/config.json");
 
 let initialized = false;
@@ -12,11 +13,11 @@ function initWebSocket(app, server) {
 }
 
 const app = express();
-const server = require("http").createServer(app);
+const server = http.createServer(app);
 initWebSocket(app, server);
 
-const PORT = config.PORT || 3000;
 const SCRIPT_DIR = config.SCRIPT_DIR;
+let port = config.PORT || 3000;
 
 const SCRIPTS = {
   status: path.join(SCRIPT_DIR, "misc", "status.sh"),
@@ -46,8 +47,21 @@ app.use("/", require("./src/routes/backupRoutes"));
 app.use("/", require("./src/routes/logRoutes"));
 app.use("/", require("./src/routes/terminalRoutes"));
 
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// Try to listen on available ports
+function tryListen(port) {
+  server.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+  }).on("error", (err) => {
+    if (err.code === "EADDRINUSE") {
+      console.warn(`Port ${port} is in use, trying ${port + 1}...`);
+      tryListen(port + 1);
+    } else {
+      console.error(`Failed to start server: ${err.message}`);
+      process.exit(1);
+    }
+  });
+}
+
+tryListen(port);
 
 module.exports = app;
