@@ -56,36 +56,47 @@ module.exports = {
   },
   downloadBackup: (req, res) => {
     const { file } = req.query;
+  
     if (!file) {
       return res.status(400).json({ error: "No backup file specified." });
     }
   
-    // Check if the provided file is a full path or just a file name
+    // Determine full file path
     let filePath;
     if (path.isAbsolute(file)) {
-      // If it's a full path, use it directly
       filePath = file;
     } else {
-      // If it's just a name, search for it in the backup directory
       const backups = getBackups(BACKUP_DIR);
       const backup = backups.find(b => path.basename(b.name) === file);
       if (backup) {
-        filePath = backup.path; // Use full path found in the backup list
+        filePath = backup.path;
       } else {
         return res.status(404).json({ error: "Backup file not found." });
       }
     }
   
-    // Check if the file exists
+    // Check file existence
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: "Backup file not found." });
     }
   
-    // Proceed with the download
-    res.download(filePath, (err) => {
+    // Set Content-Length for progress tracking
+    try {
+      const stat = fs.statSync(filePath);
+      res.setHeader("Content-Length", stat.size);
+    } catch (err) {
+      console.error("Failed to stat file:", err);
+      return res.status(500).json({ error: "Failed to read file metadata." });
+    }
+  
+    // Trigger download
+    res.download(filePath, path.basename(filePath), (err) => {
       if (err) {
         console.error("Error downloading backup:", err);
-        res.status(500).json({ error: "Error downloading backup." });
+        // Don't send JSON if headers already sent
+        if (!res.headersSent) {
+          res.status(500).json({ error: "Error downloading backup." });
+        }
       }
     });
   },

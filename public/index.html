@@ -151,6 +151,18 @@
           </select>
           <button class="action-button" type="submit">Download Backup</button>
         </form>
+        <div id="download-status" style="display: none; margin-top: 0.5em">
+          <progress
+            id="download-progress"
+            value="0"
+            max="100"
+            style="width: 100%"
+          ></progress>
+          <div
+            id="download-text"
+            style="font-size: 0.9em; margin-top: 0.25em"
+          ></div>
+        </div>
       </div>
     </div>
     <script type="module" src="./assets/js/main.js"></script>

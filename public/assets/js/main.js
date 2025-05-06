@@ -126,18 +126,55 @@ async function handleDownload(e) {
   const file = document.getElementById("download-file").value;
   if (!file) return showToast("Please select a backup file to download.");
   const token = localStorage.getItem("token");
+
   try {
-    const res = await fetch(`/download?file=${file}`, {
+    const res = await fetch(`/download?file=${encodeURIComponent(file)}`, {
       method: "GET",
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
     });
-    if (!res.ok) throw new Error("Error downloading file: " + res.statusText);
-    const blob = await res.blob();
 
+    if (!res.ok) throw new Error("Download failed: " + res.statusText);
+
+    const contentLength = +res.headers.get("Content-Length") || 0;
+    const reader = res.body.getReader();
+    const chunks = [];
+    let received = 0;
+
+    // Elements
+    const progressContainer = document.getElementById("download-status");
+    const progressBar = document.getElementById("download-progress");
+    const statusText = document.getElementById("download-text");
+
+    if (progressContainer && progressBar && statusText) {
+      progressContainer.style.display = "block";
+      progressBar.value = 0;
+      statusText.textContent = "Starting download...";
+    }
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      received += value.length;
+
+      if (contentLength && progressBar) {
+        const percent = (received / contentLength) * 100;
+        progressBar.value = percent;
+      }
+
+      if (statusText) {
+        const mb = n => (n / 1024 / 1024).toFixed(1);
+        statusText.textContent = contentLength
+          ? `Downloaded ${mb(received)} MB of ${mb(contentLength)} MB (${((received / contentLength) * 100).toFixed(1)}%)`
+          : `Downloaded ${mb(received)} MB`;
+      }
+    }
+
+    const blob = new Blob(chunks);
     const url = URL.createObjectURL(blob);
+
     const a = document.createElement("a");
     a.href = url;
     a.download = file;
@@ -145,8 +182,18 @@ async function handleDownload(e) {
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
+
+    if (statusText) statusText.textContent = "Download complete!";
+    setTimeout(() => {
+      if (progressContainer) progressContainer.style.display = "none";
+    }, 2000);
+
+    showToast("Download complete!");
   } catch (err) {
-    showToast("Error: " + err);
+    console.error(err);
+    showToast("Error: " + err.message);
+    const statusText = document.getElementById("download-text");
+    if (statusText) statusText.textContent = "Download failed.";
   }
 }
 
