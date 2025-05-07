@@ -36,7 +36,14 @@ export function fetchWithErrorHandling(url, options = {}) {
 }
 
 export function sendCommand(command) {
-  fetchWithErrorHandling(`/${command}`, { method: "POST" }).then(() => {});
+  fetchWithErrorHandling(`/${command}`, { method: "POST" }).then((response) => {
+    if (response.error) {
+      console.error("Error sending command:", response.error);
+      showToast("Error: " + response.error);
+    } else {
+      showToast(`Command "${command}" executed successfully!`);
+    }
+  });
 }
 
 export function pollLogs(autoScroll) {
