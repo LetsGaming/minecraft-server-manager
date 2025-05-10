@@ -46,11 +46,11 @@ export function sendCommand(command) {
   });
 }
 
-export function pollLogs(autoScroll) {
+export async function pollLogs(autoScroll) {
   if (hideLogs) return;
   const logLength = document.getElementById("log-length").value;
   const logOutput = document.getElementById("log-output");
-  fetch(`/log?length=${logLength}`)
+  await fetch(`/log?length=${logLength}`)
     .then((r) => r.text())
     .then((data) => {
       logOutput.textContent = data;
@@ -59,8 +59,8 @@ export function pollLogs(autoScroll) {
     .catch((err) => console.error("Failed to fetch logs:", err));
 }
 
-export function getStatus() {
-  fetch("/status")
+export async function getStatus() {
+  await fetch("/status")
     .then((r) => r.json())
     .then((status) => {
       if (status.error)
@@ -71,8 +71,8 @@ export function getStatus() {
     .catch((err) => console.error("Failed to fetch status:", err));
 }
 
-export function loadBackups() {
-  fetchWithErrorHandling("/list-backups").then((backups) => {
+export async function loadBackups() {
+  await fetchWithErrorHandling("/list-backups").then((backups) => {
     if (!Array.isArray(backups)) return console.info("Unexpected format");
 
     const restoreSelect = document.getElementById("backup-select");

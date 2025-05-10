@@ -29,10 +29,10 @@ Object.assign(window, {
   logout,
 });
 
-function reloadAll() {
-  loadBackups();
-  getStatus();
-  pollLogs();
+async function reloadAll() {
+  await loadBackups();
+  await getStatus();
+  await pollLogs();
   showToast("Reloaded!");
 }
 
@@ -61,7 +61,7 @@ async function setupUi() {
   await updateLoginView(authed);
 }
 
-async function setuplogToggle() {
+function setuplogToggle() {
   const logToggleButton = document.getElementById("log-toggle-button");
 
   logToggleButton.addEventListener("click", (e) => {
@@ -165,9 +165,12 @@ async function handleDownload(e) {
       }
 
       if (statusText) {
-        const mb = n => (n / 1024 / 1024).toFixed(1);
+        const mb = (n) => (n / 1024 / 1024).toFixed(1);
         statusText.textContent = contentLength
-          ? `Downloaded ${mb(received)} MB of ${mb(contentLength)} MB (${((received / contentLength) * 100).toFixed(1)}%)`
+          ? `Downloaded ${mb(received)} MB of ${mb(contentLength)} MB (${(
+              (received / contentLength) *
+              100
+            ).toFixed(1)}%)`
           : `Downloaded ${mb(received)} MB`;
       }
     }
@@ -206,14 +209,45 @@ async function initializeApp() {
   setupUi();
   setuplogToggle();
 
-  loadBackups();
-  getStatus();
-  pollLogs(getAutoScroll());
+  await loadBackups();
+  await getStatus();
+  await pollLogs(getAutoScroll());
 
-  setInterval(() => pollLogs(getAutoScroll()), LOG_POLL_INTERVAL_MS);
-  setInterval(getStatus, STATUS_UPDATE_INTERVAL_MS);
+  // Start polling logs without overlapping
+  (function startPollingLogs() {
+    async function pollLoop() {
+      try {
+        await pollLogs(getAutoScroll());
+      } catch (err) {
+        console.error("Error polling logs:", err);
+      } finally {
+        setTimeout(pollLoop, LOG_POLL_INTERVAL_MS);
+      }
+    }
+    pollLoop();
+  })();
+
+  // Start status updates without overlapping
+  (function startStatusUpdates() {
+    async function statusLoop() {
+      try {
+        await getStatus();
+      } catch (err) {
+        console.error("Error fetching status:", err);
+      } finally {
+        setTimeout(statusLoop, STATUS_UPDATE_INTERVAL_MS);
+      }
+    }
+    statusLoop();
+  })();
 
   setupFormHandlers();
+  document.getElementById("log-length").addEventListener("change", async (e) => {
+    const logLength = e.target.value;
+    if (logLength) {
+      await pollLogs(getAutoScroll());
+    }
+  });
 }
 
 document.addEventListener("DOMContentLoaded", initializeApp);
