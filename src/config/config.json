@@ -1,7 +1,7 @@
 {
   "PORT": 3000,
   "USER": "your_username",
-  "MODPACK_NAME": "your_modpack_name",
+  "INSTANCE_NAME": "your_instance_name",
   "SCRIPT_DIR": "/path/to/your/scripts",
   "SERVER_PATH": "/path/to/your/minecraft/server",
   "LOG_LINES": 1000,
