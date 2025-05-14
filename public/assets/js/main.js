@@ -162,6 +162,11 @@ async function handleDownload(e) {
       if (contentLength && progressBar) {
         const percent = (received / contentLength) * 100;
         progressBar.value = percent;
+
+        // Force browser to render progress immediately
+        requestAnimationFrame(() => {
+          progressBar.value = percent;
+        });
       }
 
       if (statusText) {
@@ -242,12 +247,14 @@ async function initializeApp() {
   })();
 
   setupFormHandlers();
-  document.getElementById("log-length").addEventListener("change", async (e) => {
-    const logLength = e.target.value;
-    if (logLength) {
-      await pollLogs(getAutoScroll());
-    }
-  });
+  document
+    .getElementById("log-length")
+    .addEventListener("change", async (e) => {
+      const logLength = e.target.value;
+      if (logLength) {
+        await pollLogs(getAutoScroll());
+      }
+    });
 }
 
 document.addEventListener("DOMContentLoaded", initializeApp);
