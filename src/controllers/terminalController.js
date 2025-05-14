@@ -3,7 +3,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const {
-  MODPACK_NAME,
+  INSTANCE_NAME,
   SERVER_PATH,
   BLOCKED_COMMANDS,
 } = require("../config/config.json");
@@ -22,7 +22,7 @@ function initTerminal(ws) {
     return;
   }
 
-  const sessionName = MODPACK_NAME;
+  const sessionName = INSTANCE_NAME;
   const logFile = path.resolve(SERVER_PATH, "logs", "latest.log");
 
   const check = pty.spawn("screen", ["-ls"], {

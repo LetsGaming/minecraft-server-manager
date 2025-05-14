@@ -80,7 +80,10 @@ export async function loadBackups() {
     restoreSelect.innerHTML = downloadSelect.innerHTML =
       '<option value="" disabled selected>Choose Backup</option>';
 
-    backups.forEach(({ path, name }) => {
+    backups.forEach(({ path }) => {
+      const parts = path.split("/").filter(Boolean);
+      const name = parts.slice(-2).join("/"); // e.g. "dir/file"
+
       [restoreSelect, downloadSelect].forEach((select) => {
         const option = document.createElement("option");
         option.value = path;
