@@ -1,7 +1,7 @@
 const path = require("path");
 const fs = require("fs");
 const { runScript } = require("../utils/runScript");
-const { INSTANCE_NAME } = require("../config/config.json");
+const { SERVER_PATH, INSTANCE_NAME } = require("../config/config.json");
 const BACKUP_DIR = path.join(SERVER_PATH, "..", "backups", INSTANCE_NAME);
 const SCRIPTS = global.SCRIPTS;
 
