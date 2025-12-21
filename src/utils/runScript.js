@@ -1,7 +1,4 @@
 const { spawn } = require("child_process");
-const fs = require("fs");
-const config = require("../config/config.json");
-const USER = config.USER || "root";
 
 module.exports.runScript = (scriptCommand, sudo = false, password = null) => {
   return new Promise((resolve, reject) => {
@@ -18,8 +15,8 @@ module.exports.runScript = (scriptCommand, sudo = false, password = null) => {
 
     if (sudo) {
       command = "sudo";
-      // -S reads password from stdin
-      // -p '' hides the default [sudo] password prompt
+      // -S: read password from stdin
+      // -p '' to hide default prompt (we detect it manually)
       finalArgs = ["-S", "-p", "", "-u", USER, "bash", script, ...args];
     } else {
       command = "bash";
@@ -28,23 +25,36 @@ module.exports.runScript = (scriptCommand, sudo = false, password = null) => {
 
     const child = spawn(command, finalArgs, { shell: false });
 
-    // If sudo and password provided, write it to the process
-    if (sudo && password) {
-      child.stdin.write(password + "\n");
-      child.stdin.end();
-    }
-
     let stdout = "";
     let stderr = "";
 
-    child.stdout.on("data", (data) => { stdout += data.toString(); });
-    child.stderr.on("data", (data) => { stderr += data.toString(); });
+    child.stdout.on("data", (data) => {
+      const str = data.toString();
+      stdout += str;
+
+      if (sudo && password) {
+        // Detect password prompt from sudo
+        if (str.includes("[sudo] password")) {
+          child.stdin.write(password + "\n");
+        }
+      }
+    });
+
+    child.stderr.on("data", (data) => {
+      const str = data.toString();
+      stderr += str;
+
+      if (sudo && password) {
+        if (str.includes("[sudo] password")) {
+          child.stdin.write(password + "\n");
+        }
+      }
+    });
 
     child.on("close", (code) => {
       if (code === 0) {
         resolve({ output: stdout });
       } else {
-        // If password was wrong, sudo usually exits with code 1 and writes to stderr
         reject({ error: stderr || `Script exited with code ${code}` });
       }
     });
