@@ -1,15 +1,20 @@
 export function terminal() {
   try {
     const terminal = new Terminal({
-      fontFamily: "monospace",
+      fontFamily:
+        "'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Source Code Pro', monospace",
       fontSize: 14,
+      fontWeight: 400,
+      letterSpacing: 0,
       cursorBlink: true,
       theme: {
-        background: "#1b1b1b",
-        foreground: "#9ccc65",
+        background: "#0f172a", // Matches the new --bg-dark variable
+        foreground: "#4ade80", // Matches the new --color-primary variable
+        cursor: "#4ade80",
+        selection: "rgba(74, 222, 128, 0.3)",
       },
     });
-
+    
     const fitAddon = new FitAddon.FitAddon();
     terminal.loadAddon(fitAddon);
 

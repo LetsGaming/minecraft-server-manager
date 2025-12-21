@@ -35,15 +35,39 @@ export function fetchWithErrorHandling(url, options = {}) {
     });
 }
 
-export function sendCommand(command) {
-  fetchWithErrorHandling(`/${command}`, { method: "POST" }).then((response) => {
+/**
+ * Sends a command to the server with optional sudo elevation.
+ * @param {string} command - The command endpoint to call.
+ * @param {boolean} useSudo - Whether to include the sudo password.
+ */
+export async function sendCommand(command, useSudo = false) {
+  const passwordField = useSudo ? document.getElementById('sudo-password') : null;
+  
+  const payload = {
+    ...(useSudo && { password: passwordField?.value || "" })
+  };
+
+  try {
+    const response = await fetchWithErrorHandling(`/${command}`, {
+      method: "POST",
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
     if (response.error) {
-      console.error("Error sending command:", response.error);
-      showToast("Error: " + response.error);
-    } else {
-      showToast(`Command "${command}" executed successfully!`);
+      throw new Error(response.error);
     }
-  });
+
+    showToast(`Command "${command}" executed successfully!`);
+    
+    // Reset field only on success
+    if (passwordField) {
+      passwordField.value = "";
+    }
+  } catch (err) {
+    console.error(`Error sending command [${command}]:`, err.message);
+    showToast(`Error: ${err.message}`);
+  }
 }
 
 export async function pollLogs(autoScroll) {
