@@ -2,61 +2,46 @@ const { spawn } = require("child_process");
 
 module.exports.runScript = (scriptCommand, sudo = false, password = null) => {
   return new Promise((resolve, reject) => {
-    const parts = scriptCommand.trim().split(/\s+/);
-    const script = parts[0];
-    const args = parts.slice(1);
+    const [command, ...args] = scriptCommand.trim().split(/\s+/);
 
-    if (!fs.existsSync(script)) {
-      return reject({ error: `Script not found: ${script}` });
-    }
+    // Using -S to read from stdin and --stdin to be explicit
+    const spawnCmd = sudo ? "sudo" : command;
+    const spawnArgs = sudo ? ["-S", "bash", command, ...args] : args;
 
-    let command;
-    let finalArgs;
-
-    if (sudo) {
-      command = "sudo";
-      // -S: read password from stdin
-      // -p '' to hide default prompt (we detect it manually)
-      finalArgs = ["-S", "-p", "", "-u", USER, "bash", script, ...args];
-    } else {
-      command = "bash";
-      finalArgs = [script, ...args];
-    }
-
-    const child = spawn(command, finalArgs, { shell: false });
+    const child = spawn(spawnCmd, spawnArgs, { shell: false });
 
     let stdout = "";
     let stderr = "";
+    let passwordSent = false;
 
-    child.stdout.on("data", (data) => {
-      const str = data.toString();
-      stdout += str;
+    // Sudo prompts are almost always sent to STDERR
+    child.stderr.on("data", (data) => {
+      const chunk = data.toString();
+      stderr += chunk;
 
-      if (sudo && password) {
-        // Detect password prompt from sudo
-        if (str.includes("[sudo] password")) {
-          child.stdin.write(password + "\n");
-        }
+      // REACTIVE CHECK: Only send if we haven't yet and we see the prompt
+      if (sudo && password && !passwordSent && chunk.toLowerCase().includes("password")) {
+        child.stdin.write(password + "\n");
+        passwordSent = true;
+        // Note: We don't child.stdin.end() here because the 
+        // script might need more input later.
       }
     });
 
-    child.stderr.on("data", (data) => {
-      const str = data.toString();
-      stderr += str;
-
-      if (sudo && password) {
-        if (str.includes("[sudo] password")) {
-          child.stdin.write(password + "\n");
-        }
-      }
+    child.stdout.on("data", (data) => {
+      stdout += data.toString();
     });
 
     child.on("close", (code) => {
       if (code === 0) {
-        resolve({ output: stdout });
+        resolve({ output: stdout.trim() });
       } else {
-        reject({ error: stderr || `Script exited with code ${code}` });
+        // Filter out the password prompt from the error message for clarity
+        const cleanError = stderr.replace(/\[sudo\] password for .+: /g, "").trim();
+        reject({ error: cleanError || `Exited with code ${code}` });
       }
     });
+
+    child.on("error", (err) => reject({ error: err.message }));
   });
 };
