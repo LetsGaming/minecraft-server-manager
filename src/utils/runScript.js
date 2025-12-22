@@ -1,41 +1,59 @@
 const { spawn } = require("child_process");
+const path = require("path");
 
+/**
+ * Runs a script as another user using sudo -A (Askpass)
+ * @param {string} scriptPath - Full path to the .sh script to run
+ * @param {Array} args - Arguments to pass to the script
+ * @param {string} password - The sudo password
+ */
 module.exports.runScript = (scriptPath, args = [], password = null) => {
   return new Promise((resolve, reject) => {
-    // We force a specific prompt string "NODE_SUDO_PROMPT" 
-    // so we aren't guessing what the OS will output.
-    const finalArgs = ["-S", "-p", "NODE_SUDO_PROMPT", "-u", "minecraft", "bash", scriptPath, ...args];
-    
+    const askpassPath = path.join(__dirname, "askpass.sh");
+
+    // -A tells sudo to use the program defined in SUDO_ASKPASS
+    // -u minecraft tells sudo to run as the minecraft user
+    const finalArgs = ["-A", "-u", "minecraft", "bash", scriptPath, ...args];
+
     const child = spawn("sudo", finalArgs, {
-      shell: false,
-      env: { ...process.env, LANG: "C" } // Force English for predictable parsing
+      env: {
+        ...process.env,
+        NODE_SUDO_PW: password,      // Password passed safely via env
+        SUDO_ASKPASS: askpassPath,   // Path to our helper script
+        DISPLAY: ":0",               // Often required to "trick" sudo into askpass mode
+        LANG: "C"                    // Standardize output language
+      }
     });
 
     let stdout = "";
     let stderr = "";
 
-    child.stderr.on("data", (data) => {
+    child.stdout.on("data", (data) => {
       const chunk = data.toString();
-      stderr += chunk;
-
-      // Check for our custom prompt
-      if (chunk.includes("NODE_SUDO_PROMPT") && password) {
-        child.stdin.write(password + "\n");
-      }
+      stdout += chunk;
+      // Keep logging to console for screen/progress monitoring
+      console.log(`[Script]: ${chunk.trim()}`);
     });
 
-    child.stdout.on("data", (data) => {
-      stdout += data.toString();
-      // Optional: Log progress to console so you see the "Waiting for save" messages
-      console.log(`[Script]: ${data}`);
+    child.stderr.on("data", (data) => {
+      stderr += data.toString();
     });
 
     child.on("close", (code) => {
       if (code === 0) {
         resolve({ output: stdout.trim() });
       } else {
-        reject({ error: stderr.trim() || `Exit code ${code}` });
+        // If it fails, stderr will usually contain why (e.g. incorrect password)
+        reject({ 
+          error: stderr.trim() || `Process exited with code ${code}`,
+          code: code 
+        });
       }
+    });
+
+    // Error handling for the spawn process itself
+    child.on("error", (err) => {
+      reject({ error: err.message });
     });
   });
 };

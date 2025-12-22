@@ -12,7 +12,8 @@ module.exports = {
   },
   start: async (req, res) => {
     try {
-      const result = await runScript(SCRIPTS.start, true);
+      const password = req.body.password || null;
+      const result = await runScript(SCRIPTS.start, [], password);
       res.json(result || { message: "Server started." });
     } catch (err) {
       res.status(500).json(err);
@@ -20,7 +21,8 @@ module.exports = {
   },
   shutdown: async (req, res) => {
     try {
-      const result = await runScript(SCRIPTS.shutdown, true);
+      const password = req.body.password || null;
+      const result = await runScript(SCRIPTS.shutdown, [], password);
       res.json(result || { message: "Server shut down." });
     } catch (err) {
       res.status(500).json(err);
@@ -28,7 +30,8 @@ module.exports = {
   },
   restart: async (req, res) => {
     try {
-      const result = await runScript(SCRIPTS.restart, true);
+      const password = req.body.password || null;
+      const result = await runScript(SCRIPTS.restart, [], password);
       res.json(result || { message: "Server restarted." });
     } catch (err) {
       res.status(500).json(err);
