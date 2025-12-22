@@ -2,15 +2,11 @@ const pty = require('node-pty');
 const path = require('path');
 
 const config = require("../config/config.json");
-const USER = config.USER || "root"; // Default to root if USER is not set
+const USER = config.USER || "root"; 
 
-/**
- * Runs a script simulating a real terminal to handle interactive sudo prompts.
- */
 module.exports.runScript = (scriptPath, args = [], password = null) => {
   return new Promise((resolve, reject) => {
 
-    // Create the Pseudo-Terminal (PTY)
     const ptyProcess = pty.spawn('bash', [], {
       name: 'xterm-color',
       cols: 80,
@@ -21,21 +17,24 @@ module.exports.runScript = (scriptPath, args = [], password = null) => {
 
     let output = "";
     
-    // We use a custom prompt "NODE_SUDO_LOGIN" to catch the password request reliably
-    const command = `sudo -p "NODE_SUDO_LOGIN" -u ${USER} bash ${scriptPath} ${args.join(' ')}\r`;
+    // --- CONDITIONAL SUDO LOGIC ---
+    // If password exists, use sudo with a custom prompt. 
+    // Otherwise, run the script directly.
+    const fullArgs = args.join(' ');
+    const command = password 
+      ? `sudo -p "NODE_SUDO_LOGIN" -u ${USER} bash ${scriptPath} ${fullArgs}\r`
+      : `bash ${scriptPath} ${fullArgs}\r`;
 
     ptyProcess.onData((data) => {
       output += data;
-      
-      // This shows the script progress in your 'screen' session in real-time
       process.stdout.write(data);
 
-      // We "type" the password if we see our custom prompt OR the standard sudo prompt
-      // This handles both the initial sudo AND any sudo calls inside the .sh file
-      const isPrompt = data.includes("NODE_SUDO_LOGIN") || data.includes(`password for ${USER}`);
-      
-      if (isPrompt && password) {
-        ptyProcess.write(`${password}\r`);
+      // Only attempt to write a password if one was actually provided
+      if (password) {
+        const isPrompt = data.includes("NODE_SUDO_LOGIN") || data.includes(`password for ${USER}`);
+        if (isPrompt) {
+          ptyProcess.write(`${password}\r`);
+        }
       }
     });
 
@@ -47,7 +46,6 @@ module.exports.runScript = (scriptPath, args = [], password = null) => {
       }
     });
 
-    // Send the command to the virtual terminal
     ptyProcess.write(command);
   });
 };
