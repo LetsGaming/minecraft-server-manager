@@ -168,6 +168,11 @@ input:focus, select:focus {
   white-space: pre-wrap;
 }
 
+#terminal-container {
+  height: 100% !important;
+  white-space: normal !important;
+}
+
 /* === Toast (FIXED) === */
 .toast {
   position: fixed;
