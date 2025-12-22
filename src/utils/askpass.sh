@@ -1,3 +1,5 @@
 #!/bin/bash
 
-echo "$NODE_SUDO_PW"
+if [ -n "$NODE_SUDO_PW" ]; then
+    echo "$NODE_SUDO_PW"
+fi
