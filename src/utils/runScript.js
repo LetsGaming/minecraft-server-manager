@@ -1,3 +1,8 @@
+const pty = require('node-pty');
+
+const config = require("../config/config.json");
+const USER = config.USER || "root"; 
+
 module.exports.runScript = (scriptPath, args = [], password = null, timeoutMs = 60000) => {
   return new Promise((resolve, reject) => {
     const ptyProcess = pty.spawn('bash', [], {
