@@ -63,23 +63,6 @@
 
       <div id="control" class="tab-content container">
         <h2>Server Controls</h2>
-        <div style="margin-bottom: 1.5rem">
-          <label
-            for="sudo-password"
-            style="
-              display: block;
-              margin-bottom: 0.5rem;
-              font-size: 0.8rem;
-              color: var(--text-muted);
-            "
-            >Sudo Password</label
-          >
-          <input
-            type="password"
-            id="sudo-password"
-            placeholder="Enter root/sudo password"
-          />
-        </div>
         <div class="control-buttons-container">
           <button
             id="start-button"
@@ -228,6 +211,40 @@
     </div>
 
     <div id="toast" class="toast">Message goes here</div>
+
+    <div id="sudo-modal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Sudo Authentication</h3>
+          <p>
+            This action requires administrative privileges. Please enter your
+            sudo password to continue.
+          </p>
+        </div>
+
+        <div class="modal-body">
+          <input
+            type="password"
+            id="sudo-password"
+            placeholder="Enter sudo password"
+            autocomplete="current-password"
+          />
+        </div>
+
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="action-button secondary-button"
+            id="cancel-sudo-button"
+          >
+            Cancel
+          </button>
+          <button type="button" class="action-button" id="confirm-sudo-button">
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
 
     <script type="module" src="./assets/js/main.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.min.js"></script>

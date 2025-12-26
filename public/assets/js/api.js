@@ -1,4 +1,4 @@
-import { showTab, showToast } from "./ui.js";
+import { requestSudoPassword, showTab, showToast } from "./ui.js";
 import { updateLoginView, updateLogToggleView } from "./utils.js";
 
 export const STATUS_UPDATE_INTERVAL_S = 120;
@@ -37,14 +37,23 @@ export function fetchWithErrorHandling(url, options = {}) {
 
 /**
  * Sends a command to the server with optional sudo elevation.
- * @param {string} command - The command endpoint to call.
- * @param {boolean} useSudo - Whether to include the sudo password.
  */
 export async function sendCommand(command, useSudo = false) {
-  const passwordField = useSudo ? document.getElementById('sudo-password') : null;
-  
+  let sudoPassword = "";
+
+  // If sudo is required, wait for the modal promise to resolve
+  if (useSudo) {
+    sudoPassword = await requestSudoPassword();
+    
+    // If the user cancelled the modal (returned null), stop execution
+    if (sudoPassword === null) {
+      console.log("Command cancelled by user.");
+      return; 
+    }
+  }
+
   const payload = {
-    ...(useSudo && { password: passwordField?.value || "" })
+    ...(useSudo && { password: sudoPassword })
   };
 
   try {
@@ -59,11 +68,6 @@ export async function sendCommand(command, useSudo = false) {
     }
 
     showToast(`Command "${command}" executed successfully!`);
-    
-    // Reset field only on success
-    if (passwordField) {
-      passwordField.value = "";
-    }
   } catch (err) {
     console.error(`Error sending command [${command}]:`, err.message);
     showToast(`Error: ${err.message}`);

@@ -85,3 +85,47 @@ function loadTerminalInto() {
   terminal();
   terminalLoaded = true;
 }
+
+/**
+ * Opens the sudo modal and waits for user input.
+ * @returns {Promise<string|null>} Resolves with the password or null if cancelled.
+ */
+export async function requestSudoPassword() {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('sudo-modal');
+    const input = document.getElementById('sudo-password');
+    const confirmBtn = document.getElementById('confirm-sudo-button');
+    const cancelBtn = document.getElementById('cancel-sudo-button'); // Assuming cancel button
+
+    modal.classList.add('active');
+    input.focus();
+
+    const cleanup = () => {
+      modal.classList.remove('active');
+      input.value = '';
+      // Remove listeners to prevent memory leaks/duplicate calls
+      confirmBtn.removeEventListener('click', onConfirm);
+      cancelBtn.removeEventListener('click', onCancel);
+      input.removeEventListener('keypress', onKeyPress);
+    };
+
+    const onConfirm = () => {
+      const pass = input.value;
+      cleanup();
+      resolve(pass);
+    };
+
+    const onCancel = () => {
+      cleanup();
+      resolve(null); // User bailed out
+    };
+
+    const onKeyPress = (e) => {
+      if (e.key === 'Enter') onConfirm();
+    };
+
+    confirmBtn.addEventListener('click', onConfirm);
+    cancelBtn.addEventListener('click', onCancel);
+    input.addEventListener('keypress', onKeyPress);
+  });
+}

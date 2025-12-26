@@ -31,8 +31,9 @@ module.exports = {
   createBackup: async (req, res) => {
     try {
       const { archive } = req.body;
+      const args = archive ? ["--archive"] : [];
       const result = await runScript(
-        `${SCRIPTS.backup} ${archive ? "--archive" : ""}`
+        SCRIPTS.backup, args
       );
       res.json(result || { message: "Backup created." });
     } catch (err) {
@@ -46,8 +47,10 @@ module.exports = {
     }
 
     try {
+      const backup_path = path.join(BACKUP_DIR, file);
+      const args = ["--file", backup_path];
       const result = await runScript(
-        `${SCRIPTS.restore} --file "${path.join(BACKUP_DIR, file)}"`
+        SCRIPTS.restore, args
       );
       res.json(result || { message: "Backup restored." });
     } catch (err) {
