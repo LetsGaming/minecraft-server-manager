@@ -1,6 +1,22 @@
 import { isAuthed } from "./api.js";
 import { terminal } from "./terminal.js";
 
+// Function to apply the theme
+export function setTheme(themeName) {
+    document.documentElement.setAttribute('data-theme', themeName);
+    localStorage.setItem('pref-theme', themeName);
+    
+    // Update the dropdown value if it exists
+    const selector = document.getElementById('theme-select');
+    if (selector) selector.value = themeName;
+}
+
+// Initialize theme on load
+export function initTheme() {
+    const savedTheme = localStorage.getItem('pref-theme') || 'emerald';
+    setTheme(savedTheme);
+}
+
 let terminalLoaded = false;
 
 export function showToast(message) {

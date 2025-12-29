@@ -21,6 +21,17 @@
           "
         >
           <h1>Minecraft Control</h1>
+          <div class="theme-selector-container">
+            <select
+              id="theme-select"
+              onchange="setTheme(this.value)"
+              style="width: auto; padding: 0.4rem"
+            >
+              <option value="emerald">Emerald Night</option>
+              <option value="cyber">Midnight Cyber</option>
+              <option value="sandstone">Sandstone</option>
+            </select>
+          </div>
           <button
             class="action-button logout-button login-required"
             id="logout-button"

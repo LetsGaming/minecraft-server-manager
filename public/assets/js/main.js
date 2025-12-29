@@ -10,7 +10,7 @@ import {
   isAuthed,
 } from "./api.js";
 
-import { showToast, showTab } from "./ui.js";
+import { showToast, showTab, setTheme, initTheme } from "./ui.js";
 
 import {
   updateLoginView,
@@ -27,6 +27,7 @@ Object.assign(window, {
   sendCommand,
   login,
   logout,
+  setTheme,
 });
 
 async function reloadAll() {
@@ -55,6 +56,8 @@ function setupAutoScroll(logOutput, checkbox) {
 }
 
 async function setupUi() {
+  initTheme();
+  
   const authed = await isAuthed();
   updateLogToggleView(authed); // Hide log toggle at startup
   // Hide login-required elements at startup

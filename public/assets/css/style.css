@@ -1,16 +1,53 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
 
-/* === Variables (Kept identical for your JS) === */
-:root {
+/* === Theme Variables === */
+
+/* 1. Emerald Night (Default) */
+:root, [data-theme="emerald"] {
   --color-primary: #4ade80; 
   --color-secondary: #0f172a; 
   --color-accent: #334155; 
   --color-border: #1e293b; 
-  --color-highlight: #22c55e; 
-  --font-main: 'Inter', sans-serif;
-  --spacing-unit: 20px;
+  --color-bg-panel: #1e293b;
+  --color-bg-input: #0f172a;
+  --color-text: #f1f5f9;
+  --color-text-dim: #94a3b8;
+  --color-button-text: #064e3b;
+  --grad-bg: radial-gradient(circle at top right, #1e293b, #0f172a);
   --radius: 12px;
   --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+}
+
+/* 2. Midnight Cyber (Neon/High Contrast) */
+[data-theme="cyber"] {
+  --color-primary: #f0abfc; /* Neon Pink */
+  --color-secondary: #020617; 
+  --color-accent: #1e1b4b; 
+  --color-border: #4338ca; 
+  --color-bg-panel: #0f172a;
+  --color-bg-input: #020617;
+  --color-text: #ffffff;
+  --color-text-dim: #818cf8;
+  --color-button-text: #000000;
+  --grad-bg: linear-gradient(135deg, #020617 0%, #1e1b4b 100%);
+  --radius: 2px; /* Sharp corners */
+  --shadow: 0 0 15px rgba(129, 140, 248, 0.2);
+}
+
+/* 3. Solarized Warm (Amber/Stone) */
+[data-theme="warm"] {
+  --color-primary: #f59e0b; /* Amber */
+  --color-secondary: #1c1917; 
+  --color-accent: #44403c; 
+  --color-border: #57534e; 
+  --color-bg-panel: #292524;
+  --color-bg-input: #1c1917;
+  --color-text: #fafaf9;
+  --color-text-dim: #a8a29e;
+  --color-button-text: #451a03;
+  --grad-bg: linear-gradient(to bottom, #292524, #1c1917);
+  --radius: 24px; /* Very rounded */
+  --shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
 }
 
 /* === Base Styles === */
@@ -18,20 +55,20 @@
 
 body {
   margin: 0;
-  font-family: var(--font-main);
+  font-family: 'Inter', sans-serif;
   background-color: var(--color-secondary);
-  background-image: radial-gradient(circle at top right, #1e293b, #0f172a);
-  color: #f1f5f9;
-  padding: var(--spacing-unit);
+  background-image: var(--grad-bg);
+  color: var(--color-text);
+  padding: 20px;
   display: flex;
   justify-content: center;
   min-height: 100vh;
+  transition: background 0.3s ease;
 }
 
 .main-container {
   width: 100%;
   max-width: 1000px;
-  height: auto;
 }
 
 .align-middle {
@@ -51,7 +88,7 @@ header {
 
 h1 {
   font-size: 1.5rem;
-  background: linear-gradient(to right, var(--color-primary), #2dd4bf);
+  background: linear-gradient(to right, var(--color-primary), #ffffff);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: 700;
@@ -59,30 +96,32 @@ h1 {
 
 #status {
   padding: 0.75rem 1.25rem;
-  background: #1e293b;
+  background: var(--color-bg-panel);
   border-radius: var(--radius);
   border-left: 4px solid var(--color-primary);
   font-size: 0.9rem;
   font-weight: 600;
   box-shadow: var(--shadow);
+  color: var(--color-text);
 }
 
 .tab-buttons {
   display: flex;
   gap: 8px;
-  background: #1e293b;
+  background: var(--color-bg-panel);
   padding: 6px;
   border-radius: var(--radius);
   overflow-x: auto;
+  border: 1px solid var(--color-border);
 }
 
 .tab-button, .reload-button {
   padding: 0.6rem 1.2rem;
   border: none;
   background: transparent;
-  color: #94a3b8;
+  color: var(--color-text-dim);
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: calc(var(--radius) - 4px);
   font-weight: 500;
   transition: all 0.2s;
   white-space: nowrap;
@@ -90,24 +129,25 @@ h1 {
 
 .tab-button.active {
   background: var(--color-primary);
-  color: #064e3b;
+  color: var(--color-button-text);
 }
 
-/* === Container & Tab Management (THE FIX) === */
+/* === Containers === */
 .container {
   width: 100%;
-  background: #1e293b;
+  background: var(--color-bg-panel);
   padding: 2rem;
   border-radius: var(--radius);
-  border: 1px solid #334155;
+  border: 1px solid var(--color-border);
   box-shadow: var(--shadow);
-  display: none !important; /* Force hide by default */
+  display: none !important;
   flex-direction: column;
   gap: 1.5rem;
+  transition: all 0.3s ease;
 }
 
 .container.active {
-  display: flex !important; /* Force show only when active */
+  display: flex !important;
   animation: fadeIn 0.3s ease-out;
 }
 
@@ -120,10 +160,10 @@ h1 {
 input, select, .action-button {
   width: 100%;
   padding: 0.8rem 1rem;
-  border-radius: 8px;
-  border: 1px solid #334155;
-  background: #0f172a;
-  color: white;
+  border-radius: calc(var(--radius) - 4px);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-input);
+  color: var(--color-text);
   font-family: inherit;
   font-size: 1rem;
 }
@@ -138,13 +178,13 @@ input:focus, select:focus {
   border: none;
   cursor: pointer;
   background: var(--color-primary);
-  color: #064e3b;
-  transition: opacity 0.2s;
+  color: var(--color-button-text);
+  transition: filter 0.2s, transform 0.1s;
 }
 
-.action-button:hover { opacity: 0.9; }
+.action-button:hover { filter: brightness(1.1); }
+.action-button:active { transform: scale(0.98); }
 
-/* Control Buttons Grid */
 .control-buttons-container {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -156,76 +196,60 @@ input:focus, select:focus {
 
 /* === Logs & Terminal === */
 #log-output, #terminal-container {
-  background: #0f172a;
-  color: #4ade80;
+  background: var(--color-bg-input);
+  color: var(--color-primary);
   font-family: 'Fira Code', monospace;
   font-size: 0.85rem;
   padding: 1.5rem;
-  border-radius: 8px;
+  border-radius: calc(var(--radius) - 4px);
   height: 450px;
   overflow-y: auto;
-  border: 1px solid #334155;
+  border: 1px solid var(--color-border);
   white-space: pre-wrap;
 }
 
-#terminal-container {
-  height: 100% !important;
-  white-space: normal !important;
-  padding: 1rem !important;
-  padding-right: 0 !important;
-  padding-top: 2px !important;
-}
-
-/* === Toast (FIXED) === */
+/* === Toast === */
 .toast {
   position: fixed;
   bottom: 2rem;
   left: 50%;
   transform: translate(-50%, 100px);
-  background: #1e293b;
-  color: white;
+  background: var(--color-bg-panel);
+  color: var(--color-text);
   padding: 1rem 2rem;
   border-radius: var(--radius);
   border: 1px solid var(--color-primary);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow);
   z-index: 9999;
   opacity: 0;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  pointer-events: none;
 }
 
-.toast.show {
-  opacity: 1;
-  transform: translate(-50%, 0);
-}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
 
 /* Progress Bar */
 progress { width: 100%; height: 10px; border-radius: 10px; overflow: hidden; appearance: none; }
-progress::-webkit-progress-bar { background: #0f172a; }
+progress::-webkit-progress-bar { background: var(--color-bg-input); }
 progress::-webkit-progress-value { background: var(--color-primary); }
 
 /* === Modal Styles === */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(15, 23, 42, 0.8); /* Semi-transparent background */
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(4px);
-  display: none; /* Hidden by default */
+  display: none;
   justify-content: center;
   align-items: center;
   z-index: 10000;
 }
 
-.modal-overlay.active {
-  display: flex;
-}
+.modal-overlay.active { display: flex; }
 
 .modal-content {
-  background: #1e293b;
-  padding: 2rem;
+  background: var(--color-bg-panel);
+  padding: 2.5rem;
   border-radius: var(--radius);
   border: 1px solid var(--color-primary);
   width: 90%;
@@ -236,24 +260,8 @@ progress::-webkit-progress-value { background: var(--color-primary); }
   gap: 1rem;
 }
 
-.modal-content h3 {
-  margin: 0;
-  color: var(--color-primary);
-}
-
-.modal-content p {
-  font-size: 0.9rem;
-  color: #94a3b8;
-}
-
-.modal-footer {
-  display: flex;
-  gap: 1rem;
-  margin-top: 0.5rem;
-}
-
 .secondary-button {
   background: transparent !important;
-  border: 1px solid #334155 !important;
-  color: white !important;
+  border: 1px solid var(--color-border) !important;
+  color: var(--color-text) !important;
 }
