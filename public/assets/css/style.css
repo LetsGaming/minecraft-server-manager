@@ -35,7 +35,7 @@
 }
 
 /* 3. Solarized Warm (Amber/Stone) */
-[data-theme="warm"] {
+[data-theme="sandstone"] {
   --color-primary: #f59e0b; /* Amber */
   --color-secondary: #1c1917; 
   --color-accent: #44403c; 
