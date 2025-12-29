@@ -208,6 +208,10 @@ input:focus, select:focus {
   white-space: pre-wrap;
 }
 
+#terminal-container {
+  padding: 0%;
+}
+
 /* === Toast === */
 .toast {
   position: fixed;
