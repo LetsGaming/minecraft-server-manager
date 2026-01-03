@@ -210,6 +210,8 @@ input:focus, select:focus {
 
 #terminal-container {
   padding: 0%;
+  height: 100%;
+  white-space: nowrap;
 }
 
 /* === Toast === */
