@@ -1,4 +1,4 @@
-import { showTab, showToast } from "./ui.js";
+import { showTab, showToast, requestSudoPassword } from "./ui.js";
 import { updateAuthState } from "./utils.js";
 
 export const STATUS_INTERVAL_MS = 30000;
@@ -24,9 +24,23 @@ export function apiFetch(url, options = {}) {
 
 // ── Server commands ──
 
-export async function sendCommand(command) {
+/**
+ * Sends a command to the server.
+ * If useSudo is true, prompts for the sudo password first.
+ */
+export async function sendCommand(command, useSudo = false) {
+  let password = null;
+
+  if (useSudo) {
+    password = await requestSudoPassword();
+    if (password === null) return; // User cancelled
+  }
+
   try {
-    const res = await apiFetch(`/${command}`, { method: "POST" });
+    const res = await apiFetch(`/${command}`, {
+      method: "POST",
+      body: JSON.stringify(password ? { password } : {}),
+    });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     showToast(`"${command}" executed.`);
@@ -37,7 +51,7 @@ export async function sendCommand(command) {
 
 export async function confirmAction(command) {
   if (!confirm(`Are you sure you want to ${command}? This cannot be undone.`)) return;
-  await sendCommand(command);
+  await sendCommand(command, true);
 }
 
 export async function sendRconCommand() {
@@ -79,9 +93,7 @@ export async function pollLogs(autoScroll) {
     const text = await res.text();
     logOutput.textContent = text;
     if (autoScroll) logOutput.scrollTop = logOutput.scrollHeight;
-  } catch {
-    /* silent — logs may not be available */
-  }
+  } catch { /* silent */ }
 }
 
 export async function loadBackups() {
@@ -97,19 +109,16 @@ export async function loadBackups() {
     downloadSelect.innerHTML = defaultOpt;
 
     for (const backup of backups) {
-      const label = backup.path;
       const opt = (sel) => {
         const o = document.createElement("option");
         o.value = backup.path;
-        o.textContent = label;
+        o.textContent = backup.path;
         sel.appendChild(o);
       };
       opt(restoreSelect);
       opt(downloadSelect);
     }
-  } catch {
-    /* silent on load */
-  }
+  } catch { /* silent on load */ }
 }
 
 // ── Auth ──

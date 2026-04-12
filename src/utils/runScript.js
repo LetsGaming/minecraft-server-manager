@@ -3,17 +3,37 @@ const config = require("../config");
 
 /**
  * Runs a bash script and returns its output.
- * Uses child_process.spawn instead of PTY — simpler, more reliable.
- * The manager should run as the correct user (or via systemd with proper permissions)
- * rather than relying on sudo password injection via PTY prompts.
+ * 
+ * When a password is provided, the script is executed via:
+ *   sudo -S -u <USER> bash <script> <args>
+ * The password is piped to stdin (sudo -S reads from stdin).
+ * No PTY, no prompt detection, no native modules.
  */
-function runScript(scriptPath, args = [], timeoutMs = 120000) {
+function runScript(scriptPath, args = [], { password = null, timeoutMs = 120000 } = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawn("bash", [scriptPath, ...args], {
+    let cmd, cmdArgs;
+
+    if (password) {
+      cmd = "sudo";
+      cmdArgs = ["-S", "-u", config.USER, "bash", scriptPath, ...args];
+    } else {
+      cmd = "bash";
+      cmdArgs = [scriptPath, ...args];
+    }
+
+    const child = spawn(cmd, cmdArgs, {
       cwd: config.SCRIPT_DIR,
       env: { ...process.env, HOME: process.env.HOME },
-      stdio: ["ignore", "pipe", "pipe"],
+      stdio: ["pipe", "pipe", "pipe"],
     });
+
+    // Feed password to sudo via stdin, then close stdin
+    if (password) {
+      child.stdin.write(password + "\n");
+      child.stdin.end();
+    } else {
+      child.stdin.end();
+    }
 
     let stdout = "";
     let stderr = "";
@@ -35,12 +55,22 @@ function runScript(scriptPath, args = [], timeoutMs = 120000) {
       if (killed) return;
       clearTimeout(timer);
 
+      // Filter sudo noise from output
+      const cleanStderr = stderr
+        .split("\n")
+        .filter(line => !line.includes("[sudo]") && !line.includes("password for"))
+        .join("\n")
+        .trim();
+
       if (code === 0) {
         resolve({ output: stdout.trim() || "Command completed successfully." });
       } else {
+        const errMsg = cleanStderr.includes("incorrect password")
+          ? "Incorrect sudo password."
+          : `Script exited with code ${code}`;
         reject({
-          error: `Script exited with code ${code}`,
-          output: (stdout + "\n" + stderr).trim(),
+          error: errMsg,
+          output: (stdout + "\n" + cleanStderr).trim(),
         });
       }
     });
