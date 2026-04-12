@@ -10,6 +10,24 @@ function isBlockedCommand(msg) {
   return config.BLOCKED_COMMANDS.some(blocked => normalized.startsWith(blocked));
 }
 
+/** Filter out RCON connect/disconnect noise from log lines */
+const RCON_NOISE_PATTERNS = [
+  "Thread RCON Client",
+  "RCON Listener",
+  "RCON running on",
+];
+
+function filterLogData(data) {
+  const text = data.toString();
+  const lines = text.split("\n");
+  const filtered = lines.filter(line =>
+    !RCON_NOISE_PATTERNS.some(pattern => line.includes(pattern))
+  );
+  // xterm.js needs \r\n — bare \n moves down without returning to column 0
+  const result = filtered.join("\r\n");
+  return result || null;
+}
+
 function initTerminal(ws) {
   if (os.platform() === "win32") {
     ws.send("Web terminal is not supported on Windows.");
@@ -35,7 +53,10 @@ function initRconTerminal(ws) {
   if (fs.existsSync(logFile)) {
     tailProc = spawn("tail", ["-n", "20", "-f", logFile]);
     tailProc.stdout.on("data", (data) => {
-      try { ws.send(data.toString()); } catch { /* ws closed */ }
+      const filtered = filterLogData(data);
+      if (filtered) {
+        try { ws.send(filtered); } catch { /* ws closed */ }
+      }
     });
     tailProc.stderr.on("data", (data) => {
       try { ws.send(data.toString()); } catch { /* ws closed */ }
@@ -99,7 +120,10 @@ function initScreenTerminal(ws) {
 
     const tail = spawn("tail", ["-n", "20", "-f", logFile]);
     tail.stdout.on("data", (data) => {
-      try { ws.send(data.toString()); } catch { /* ws closed */ }
+      const filtered = filterLogData(data);
+      if (filtered) {
+        try { ws.send(filtered); } catch { /* ws closed */ }
+      }
     });
 
     ws.on("message", (msg) => {

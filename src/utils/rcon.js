@@ -29,51 +29,133 @@ function decodePacket(buf) {
   };
 }
 
-function sendRconCommand(command, timeoutMs = 5000) {
-  const { RCON_HOST, RCON_PORT, RCON_PASSWORD } = config;
-  
+// ── Persistent RCON connection ──
+// Keeps a single TCP connection alive instead of opening one per command.
+// Reconnects automatically when the connection drops.
+
+let _client = null;
+let _authenticated = false;
+let _connecting = false;
+let _commandId = 10;
+let _pendingCallbacks = new Map(); // id -> { resolve, reject, timer }
+let _dataBuf = Buffer.alloc(0);
+let _authResolve = null;
+let _authReject = null;
+
+function _cleanup() {
+  _authenticated = false;
+  _connecting = false;
+  if (_client) {
+    _client.removeAllListeners();
+    _client.destroy();
+    _client = null;
+  }
+  // Reject all pending commands
+  for (const [, cb] of _pendingCallbacks) {
+    clearTimeout(cb.timer);
+    cb.reject(new Error("RCON connection lost"));
+  }
+  _pendingCallbacks.clear();
+  _dataBuf = Buffer.alloc(0);
+  if (_authReject) {
+    _authReject(new Error("RCON connection lost during auth"));
+    _authResolve = null;
+    _authReject = null;
+  }
+}
+
+function _connect() {
   return new Promise((resolve, reject) => {
-    if (!RCON_PASSWORD) {
-      return reject(new Error("RCON password not configured"));
+    if (_authenticated && _client && !_client.destroyed) {
+      return resolve();
     }
 
-    const client = new net.Socket();
-    let buf = Buffer.alloc(0);
-    let authenticated = false;
-    let timer = null;
+    if (_connecting) {
+      // Wait for the in-progress connection
+      const wait = setInterval(() => {
+        if (_authenticated) { clearInterval(wait); resolve(); }
+        if (!_connecting) { clearInterval(wait); reject(new Error("RCON connection failed")); }
+      }, 50);
+      return;
+    }
 
-    const cleanup = () => {
-      if (timer) clearTimeout(timer);
-      client.destroy();
-    };
+    _cleanup();
+    _connecting = true;
+    _authResolve = resolve;
+    _authReject = reject;
 
-    timer = setTimeout(() => {
-      cleanup();
-      reject(new Error("RCON timeout"));
-    }, timeoutMs);
+    const { RCON_HOST, RCON_PORT, RCON_PASSWORD } = config;
 
-    client.connect(RCON_PORT, RCON_HOST, () => {
-      client.write(encodePacket(1, PACKET_TYPE.AUTH, RCON_PASSWORD));
+    _client = new net.Socket();
+    _client.setKeepAlive(true, 30000);
+
+    const authTimer = setTimeout(() => {
+      _cleanup();
+      reject(new Error("RCON auth timeout"));
+    }, 10000);
+
+    _client.connect(RCON_PORT, RCON_HOST, () => {
+      _client.write(encodePacket(1, PACKET_TYPE.AUTH, RCON_PASSWORD));
     });
 
-    client.on("data", (data) => {
-      buf = Buffer.concat([buf, data]);
-      while (true) {
-        const packet = decodePacket(buf);
-        if (!packet) break;
-        buf = buf.slice(packet.totalSize);
+    _client.on("data", (data) => {
+      _dataBuf = Buffer.concat([_dataBuf, data]);
 
-        if (!authenticated) {
-          if (packet.id === -1) { cleanup(); reject(new Error("RCON auth failed")); return; }
-          if (packet.id === 1) { authenticated = true; client.write(encodePacket(2, PACKET_TYPE.COMMAND, command)); }
-        } else if (packet.id === 2) {
-          cleanup();
-          resolve(packet.body);
+      while (true) {
+        const packet = decodePacket(_dataBuf);
+        if (!packet) break;
+        _dataBuf = _dataBuf.slice(packet.totalSize);
+
+        // Auth response
+        if (!_authenticated) {
+          clearTimeout(authTimer);
+          if (packet.id === -1) {
+            _connecting = false;
+            _cleanup();
+            reject(new Error("RCON auth failed — wrong password"));
+            return;
+          }
+          if (packet.id === 1 && packet.type === PACKET_TYPE.AUTH_RESPONSE) {
+            _authenticated = true;
+            _connecting = false;
+            if (_authResolve) { _authResolve(); _authResolve = null; _authReject = null; }
+          }
+          continue;
+        }
+
+        // Command response
+        const cb = _pendingCallbacks.get(packet.id);
+        if (cb) {
+          clearTimeout(cb.timer);
+          _pendingCallbacks.delete(packet.id);
+          cb.resolve(packet.body);
         }
       }
     });
 
-    client.on("error", (err) => { cleanup(); reject(err); });
+    _client.on("error", () => _cleanup());
+    _client.on("close", () => _cleanup());
+  });
+}
+
+async function sendRconCommand(command, timeoutMs = 5000) {
+  if (!config.RCON_PASSWORD) {
+    throw new Error("RCON password not configured");
+  }
+
+  await _connect();
+
+  const id = _commandId++;
+  if (_commandId > 2000000000) _commandId = 10; // Prevent overflow
+
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      _pendingCallbacks.delete(id);
+      reject(new Error("RCON command timeout"));
+    }, timeoutMs);
+
+    _pendingCallbacks.set(id, { resolve, reject, timer });
+    _client.write(encodePacket(id, PACKET_TYPE.COMMAND, command));
   });
 }
 
