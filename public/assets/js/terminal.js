@@ -1,72 +1,47 @@
 export function terminal() {
   try {
-    const terminal = new Terminal({
-      fontFamily:
-        "'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Source Code Pro', monospace",
+    const term = new Terminal({
+      fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
       fontSize: 14,
-      fontWeight: 400,
-      letterSpacing: 0,
       cursorBlink: true,
       theme: {
-        background: "#0f172a", // Matches the new --bg-dark variable
-        foreground: "#4ade80", // Matches the new --color-primary variable
+        background: "#0f172a",
+        foreground: "#4ade80",
         cursor: "#4ade80",
         selection: "rgba(74, 222, 128, 0.3)",
       },
     });
-    
-    const fitAddon = new FitAddon.FitAddon();
-    terminal.loadAddon(fitAddon);
 
-    terminal.open(document.getElementById("terminal"));
+    const fitAddon = new FitAddon.FitAddon();
+    term.loadAddon(fitAddon);
+    term.open(document.getElementById("terminal"));
     fitAddon.fit();
 
+    const proto = location.protocol === "https:" ? "wss:" : "ws:";
     const token = localStorage.getItem("token");
-    const socket = new WebSocket(
-      `ws://${location.host}/ws/terminal?token=${token}`
-    );
+    const socket = new WebSocket(`${proto}//${location.host}/ws/terminal?token=${token}`);
 
-    socket.addEventListener("open", () => {
-      terminal.writeln("Connected to server.\r\n");
-    });
+    socket.addEventListener("open", () => term.writeln("Connected to server.\r\n"));
+    socket.addEventListener("message", (e) => term.write(e.data));
+    socket.addEventListener("close", () => term.writeln("\r\n[Connection closed]"));
+    socket.addEventListener("error", () => term.writeln("\r\n[WebSocket error]"));
 
-    socket.addEventListener("message", (event) => {
-      terminal.write(event.data);
-    });
-
-    socket.addEventListener("close", () => {
-      terminal.writeln("\r\n[Connection closed]");
-    });
-
-    socket.addEventListener("error", (err) => {
-      console.error("WebSocket error:", err);
-      terminal.writeln("\r\n[WebSocket error]");
-    });
-
-    let inputBuffer = "";
-
-    terminal.onData((data) => {
+    let buf = "";
+    term.onData((data) => {
       if (data === "\r") {
-        // Enter pressed, send the command
-        socket.send(inputBuffer + "\n"); // send with newline
-        terminal.write("\r\n"); // echo newline in terminal
-        inputBuffer = ""; // reset buffer
+        socket.send(buf + "\n");
+        term.write("\r\n");
+        buf = "";
       } else if (data === "\u007f") {
-        // Handle backspace
-        if (inputBuffer.length > 0) {
-          inputBuffer = inputBuffer.slice(0, -1);
-          terminal.write("\b \b"); // erase character visually
-        }
+        if (buf.length) { buf = buf.slice(0, -1); term.write("\b \b"); }
       } else {
-        inputBuffer += data;
-        terminal.write(data); // echo character
+        buf += data;
+        term.write(data);
       }
     });
 
-    window.addEventListener("resize", () => {
-      fitAddon.fit();
-    });
-  } catch (error) {
-    console.error("Error initializing terminal:", error);
+    window.addEventListener("resize", () => fitAddon.fit());
+  } catch (err) {
+    console.error("Terminal error:", err);
   }
 }

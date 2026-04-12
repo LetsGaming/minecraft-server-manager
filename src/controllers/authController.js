@@ -2,71 +2,86 @@ const bcrypt = require("bcrypt");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const config = require("../config");
 
 const usersFile = path.join(__dirname, "..", "config", "users.json");
-if (!fs.existsSync(usersFile)) {
-  fs.writeFileSync(usersFile, JSON.stringify([]), "utf-8");
-}
-const users = JSON.parse(fs.readFileSync(usersFile, "utf-8"));
 
-// In-memory token store (token -> username)
+// In-memory token store: token -> { username, created }
 const tokenStore = new Map();
 
-exports.isAuthed = (token) => {
-  if (!token) return false;
+const TTL_MS = (config.SESSION_TTL_HOURS || 24) * 3600 * 1000;
 
-  const username = tokenStore.get(token);
-  if (!username) return false;
+// ── Helpers ──
 
-  // Check if the user is still valid
-  const user = users.find((u) => u.username === username);
-  if (!user) {
+function loadUsers() {
+  if (!fs.existsSync(usersFile)) return [];
+  try {
+    return JSON.parse(fs.readFileSync(usersFile, "utf-8"));
+  } catch {
+    return [];
+  }
+}
+
+function pruneExpiredTokens() {
+  const now = Date.now();
+  for (const [token, data] of tokenStore) {
+    if (now - data.created > TTL_MS) {
+      tokenStore.delete(token);
+    }
+  }
+}
+
+function validateToken(token) {
+  if (!token) return null;
+  pruneExpiredTokens();
+
+  const data = tokenStore.get(token);
+  if (!data) return null;
+
+  const users = loadUsers();
+  if (!users.find(u => u.username === data.username)) {
     tokenStore.delete(token);
-    return false;
+    return null;
   }
 
-  return true;
-};
+  return data.username;
+}
+
+// ── Exports ──
+
+exports.isAuthed = (token) => !!validateToken(token);
 
 exports.isAuthenticated = (req, res) => {
   const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(401).json({ message: "No Token provided" });
-
-  const username = tokenStore.get(token);
+  const username = validateToken(token);
   if (!username) return res.status(401).json({ message: "Unauthorized" });
-
-  // Check if the user is still valid
-  const user = users.find((u) => u.username === username);
-  if (!user) {
-    tokenStore.delete(token);
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-
-  res.status(200).json({ message: "Authenticated", username });
+  res.json({ message: "Authenticated", username });
 };
 
 exports.login = async (req, res) => {
   const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ message: "Username and password required." });
+  }
 
-  const user = users.find((u) => u.username === username);
+  // Reload users on every login to pick up changes without restart
+  const users = loadUsers();
+  const user = users.find(u => u.username === username);
   if (!user) return res.status(401).json({ message: "Invalid credentials" });
 
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) return res.status(401).json({ message: "Invalid credentials" });
 
-  // Generate a secure random token
   const token = crypto.randomBytes(32).toString("hex");
-  tokenStore.set(token, username);
+  tokenStore.set(token, { username, created: Date.now() });
 
-  res.status(200).json({ token });
+  res.json({ token });
 };
 
 exports.logout = (req, res) => {
   const token = req.headers.authorization?.split(" ")[1];
-  if (token) {
-    tokenStore.delete(token);
-  }
-  res.status(201).json({ message: "logged out" });
+  if (token) tokenStore.delete(token);
+  res.status(200).json({ message: "Logged out." });
 };
 
 exports.tokenStore = tokenStore;

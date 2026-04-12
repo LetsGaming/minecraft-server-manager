@@ -1,9 +1,7 @@
 {
   "PORT": 3000,
-  "USER": "your_username",
-  "INSTANCE_NAME": "your_instance_name",
   "SCRIPT_DIR": "/path/to/your/scripts",
-  "SERVER_PATH": "/path/to/your/minecraft/server",
   "LOG_LINES": 1000,
-  "BLOCKED_COMMANDS": []
+  "BLOCKED_COMMANDS": [],
+  "SESSION_TTL_HOURS": 24
 }

@@ -1,35 +1,23 @@
 const path = require("path");
 const fs = require("fs");
-const { SERVER_PATH, LOG_LINES } = require("../config/config.json");
-const { getRootDir } = require("../utils/utils");
+const config = require("../config");
 
 module.exports = {
   getLogs: (req, res) => {
-    const { length } = req.query;
-    const logFile = path.join(SERVER_PATH, "logs", "latest.log");
-    const fallbackLogFile = path.join(
-      getRootDir(__dirname),
-      "public",
-      "test.log"
-    );
+    const length = parseInt(req.query.length, 10) || config.LOG_LINES;
+    const logFile = path.join(config.SERVER_PATH, "logs", "latest.log");
 
     if (!fs.existsSync(logFile)) {
-      return serveLogFile(fallbackLogFile, res, undefined, true); // forceFull = true
+      return res.type("text/plain").send("Log file not found. Server may not have started yet.");
     }
 
-    serveLogFile(logFile, res, length);
+    fs.readFile(logFile, "utf8", (err, data) => {
+      if (err) {
+        return res.status(500).json({ error: "Error reading log file." });
+      }
+      const lines = data.trim().split("\n");
+      const output = lines.slice(-Math.min(length, lines.length)).join("\n");
+      res.type("text/plain").send(output);
+    });
   },
 };
-
-function serveLogFile(filePath, res, length = LOG_LINES, forceFull = false) {
-  fs.readFile(filePath, "utf8", (err, data) => {
-    if (err) {
-      return res.status(500).json({ error: "Error reading log file." });
-    }
-    const lines = data.trim().split("\n");
-    const output = forceFull
-      ? lines.join("\n")
-      : lines.slice(-length).join("\n");
-    res.type("text/plain").send(output);
-  });
-}

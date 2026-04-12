@@ -1,110 +1,98 @@
 const path = require("path");
 const fs = require("fs");
 const { runScript } = require("../utils/runScript");
-const { SERVER_PATH, INSTANCE_NAME } = require("../config/config.json");
-const BACKUP_DIR = path.join(SERVER_PATH, "..", "backups", INSTANCE_NAME);
-const SCRIPTS = global.SCRIPTS;
+const config = require("../config");
 
-const getBackups = (dir) => {
-  let backups = [];
-  if (!fs.existsSync(dir)) {
-    return backups;
-  }
-  const files = fs.readdirSync(dir);
+const BACKUP_DIR = config.BACKUPS_PATH || path.join(config.SERVER_PATH, "..", "backups", config.INSTANCE_NAME);
 
-  files.forEach((file) => {
+// ── Helpers ──
+
+function getBackups(dir) {
+  const backups = [];
+  if (!fs.existsSync(dir)) return backups;
+
+  for (const file of fs.readdirSync(dir)) {
     const filePath = path.join(dir, file);
-    if (fs.statSync(filePath).isDirectory()) {
-      backups = backups.concat(getBackups(filePath)); // Recurse into subdirectories
+    const stat = fs.statSync(filePath);
+    if (stat.isDirectory()) {
+      backups.push(...getBackups(filePath));
     } else if (file.endsWith(".tar.gz") || file.endsWith(".tar.zst")) {
       backups.push({
-        name: file, // Just the file name
-        path: filePath, // Full path to the file
+        name: file,
+        path: path.relative(BACKUP_DIR, filePath), // Relative path only — no absolute leak
+        size: stat.size,
+        modified: stat.mtime.toISOString(),
       });
     }
-  });
+  }
 
-  return backups;
-};
+  return backups.sort((a, b) => new Date(b.modified) - new Date(a.modified));
+}
+
+/**
+ * Validate that a path stays within the backup directory.
+ * Prevents path traversal attacks (e.g. ../../etc/passwd).
+ */
+function resolveBackupPath(relativePath) {
+  const resolved = path.resolve(BACKUP_DIR, relativePath);
+  if (!resolved.startsWith(path.resolve(BACKUP_DIR))) {
+    return null; // Path traversal attempt
+  }
+  return resolved;
+}
+
+// ── Handlers ──
 
 module.exports = {
   createBackup: async (req, res) => {
     try {
       const { archive } = req.body;
       const args = archive ? ["--archive"] : [];
-      const result = await runScript(
-        SCRIPTS.backup, args
-      );
+      const result = await runScript(config.SCRIPTS.backup, args, 600000);
       res.json(result || { message: "Backup created." });
     } catch (err) {
       res.status(500).json(err);
     }
   },
+
   restoreBackup: async (req, res) => {
     const { file } = req.body;
-    if (!file) {
-      return res.status(400).json({ error: "No backup file specified." });
-    }
+    if (!file) return res.status(400).json({ error: "No backup file specified." });
+
+    const filePath = resolveBackupPath(file);
+    if (!filePath) return res.status(403).json({ error: "Invalid backup path." });
+    if (!fs.existsSync(filePath)) return res.status(404).json({ error: "Backup file not found." });
 
     try {
-      const backup_path = path.join(BACKUP_DIR, file);
-      const args = ["--file", backup_path];
-      const result = await runScript(
-        SCRIPTS.restore, args
-      );
+      const result = await runScript(config.SCRIPTS.restore, ["--file", filePath, "--y"], 600000);
       res.json(result || { message: "Backup restored." });
     } catch (err) {
       res.status(500).json(err);
     }
   },
+
   downloadBackup: (req, res) => {
     const { file } = req.query;
-  
-    if (!file) {
-      return res.status(400).json({ error: "No backup file specified." });
-    }
-  
-    // Determine full file path
-    let filePath;
-    if (path.isAbsolute(file)) {
-      filePath = file;
-    } else {
-      const backups = getBackups(BACKUP_DIR);
-      const backup = backups.find(b => path.basename(b.name) === file);
-      if (backup) {
-        filePath = backup.path;
-      } else {
-        return res.status(404).json({ error: "Backup file not found." });
-      }
-    }
-  
-    // Check file existence
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: "Backup file not found." });
-    }
-  
-    // Set Content-Length for progress tracking
+    if (!file) return res.status(400).json({ error: "No backup file specified." });
+
+    const filePath = resolveBackupPath(file);
+    if (!filePath) return res.status(403).json({ error: "Invalid backup path." });
+    if (!fs.existsSync(filePath)) return res.status(404).json({ error: "Backup file not found." });
+
     try {
       const stat = fs.statSync(filePath);
       res.setHeader("Content-Length", stat.size);
-    } catch (err) {
-      console.error("Failed to stat file:", err);
-      return res.status(500).json({ error: "Failed to read file metadata." });
-    }
-  
-    // Trigger download
-    res.download(filePath, path.basename(filePath), (err) => {
-      if (err) {
-        console.error("Error downloading backup:", err);
-        // Don't send JSON if headers already sent
-        if (!res.headersSent) {
+      res.download(filePath, path.basename(filePath), (err) => {
+        if (err && !res.headersSent) {
           res.status(500).json({ error: "Error downloading backup." });
         }
-      }
-    });
+      });
+    } catch (err) {
+      res.status(500).json({ error: "Failed to read file metadata." });
+    }
   },
+
   listBackups: (req, res) => {
-    const backups = getBackups(BACKUP_DIR);
-    res.json(backups);
+    res.json(getBackups(BACKUP_DIR));
   },
 };

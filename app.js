@@ -1,55 +1,56 @@
 const express = require("express");
 const expressWs = require("express-ws");
-const path = require("path");
 const http = require("http");
-const config = require("./src/config/config.json");
+const config = require("./src/config");
 
-const SCRIPT_DIR = config.SCRIPT_DIR;
-const SCRIPTS = {
-  status: path.join(SCRIPT_DIR, "misc", "status.sh"),
-  start: path.join(SCRIPT_DIR, "start.sh"),
-  shutdown: path.join(SCRIPT_DIR, "shutdown.sh"),
-  restart: path.join(SCRIPT_DIR, "restart.sh"),
-  backup: path.join(SCRIPT_DIR, "backup", "backup.sh"),
-  restore: path.join(SCRIPT_DIR, "backup", "restore.sh"),
-};
-global.SCRIPTS = SCRIPTS;
+const app = express();
+const server = http.createServer(app);
+expressWs(app, server);
 
-let basePort = config.PORT || 3000;
+// ── Middleware ──
+app.use(express.static("public"));
+app.use(express.json());
 
-function createApp(port) {
-  const app = express();
-  const server = http.createServer(app);
-  expressWs(app, server);
+// Security headers
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  next();
+});
 
-  app.use(express.static("public"));
-  app.use(express.json());
+// ── Routes ──
+app.use("/", require("./src/routes/authRoutes"));
+app.use("/", require("./src/routes/serverRoutes"));
+app.use("/", require("./src/routes/backupRoutes"));
+app.use("/", require("./src/routes/logRoutes"));
+app.use("/", require("./src/routes/terminalRoutes"));
 
-  app.ws("/ws/echo", (ws, req) => {
-    ws.on("message", (msg) => {
-      console.log(`Received message: ${msg}`);
-      ws.send(`Echo: ${msg}`);
-    });
+// ── Start ──
+const port = config.PORT;
+
+server.listen(port, () => {
+  console.log(`Minecraft Server Manager running on port ${port}`);
+  console.log(`  Instance: ${config.INSTANCE_NAME}`);
+  console.log(`  Server:   ${config.SERVER_PATH}`);
+  console.log(`  RCON:     ${config.USE_RCON ? `enabled (port ${config.RCON_PORT})` : "disabled (using screen)"}`);
+}).on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(`Port ${port} is already in use. Change PORT in config.json.`);
+  } else {
+    console.error(`Failed to start: ${err.message}`);
+  }
+  process.exit(1);
+});
+
+// ── Graceful shutdown ──
+function shutdown(signal) {
+  console.log(`\n${signal} received. Shutting down...`);
+  server.close(() => {
+    console.log("Server closed.");
+    process.exit(0);
   });
-
-  // Use Routers
-  app.use("/", require("./src/routes/authRoutes"));
-  app.use("/", require("./src/routes/serverRoutes"));
-  app.use("/", require("./src/routes/backupRoutes"));
-  app.use("/", require("./src/routes/logRoutes"));
-  app.use("/", require("./src/routes/terminalRoutes"));
-
-  server.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-  }).on("error", (err) => {
-    if (err.code === "EADDRINUSE") {
-      console.warn(`Port ${port} is in use, trying ${port + 1}...`);
-      createApp(port + 1); // try again with a fresh app/server
-    } else {
-      console.error(`Failed to start server: ${err.message}`);
-      process.exit(1);
-    }
-  });
+  // Force exit after 5s
+  setTimeout(() => process.exit(1), 5000);
 }
-
-createApp(basePort);
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));

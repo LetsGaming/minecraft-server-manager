@@ -1,198 +1,160 @@
-import { requestSudoPassword, showTab, showToast } from "./ui.js";
-import { updateLoginView, updateLogToggleView } from "./utils.js";
+import { showTab, showToast } from "./ui.js";
+import { updateAuthState } from "./utils.js";
 
-export const STATUS_UPDATE_INTERVAL_S = 120;
-export const STATUS_UPDATE_INTERVAL_MS = STATUS_UPDATE_INTERVAL_S * 1000;
-export const LOG_POLL_INTERVAL_S = 15;
-export const LOG_POLL_INTERVAL_MS = LOG_POLL_INTERVAL_S * 1000;
+export const STATUS_INTERVAL_MS = 30000;
+export const LOG_INTERVAL_MS = 10000;
 
-const hideLogs = globalThis.HIDE_LOGS || false;
+// ── Fetch wrapper ──
 
-function updateUi(bool) {
-  updateLogToggleView(bool);
-  updateLoginView(bool);
-}
-
-export function fetchWithErrorHandling(url, options = {}) {
+export function apiFetch(url, options = {}) {
   const token = localStorage.getItem("token");
-  const headers = {
-    "Content-Type": "application/json",
-    ...options.headers,
-  };
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-  return fetch(url, { ...options, headers })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    })
-    .catch((error) => {
-      console.error("Fetch error:", error);
-      showToast("Error fetching data. Please try again.");
-    });
+  const headers = { "Content-Type": "application/json", ...options.headers };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  return fetch(url, { ...options, headers }).then((res) => {
+    if (res.status === 401) {
+      localStorage.removeItem("token");
+      updateAuthState(false);
+      showTab("login");
+      throw new Error("Session expired");
+    }
+    return res;
+  });
 }
 
-/**
- * Sends a command to the server with optional sudo elevation.
- */
-export async function sendCommand(command, useSudo = false) {
-  let sudoPassword = "";
+// ── Server commands ──
 
-  // If sudo is required, wait for the modal promise to resolve
-  if (useSudo) {
-    sudoPassword = await requestSudoPassword();
-    
-    // If the user cancelled the modal (returned null), stop execution
-    if (sudoPassword === null) {
-      console.log("Command cancelled by user.");
-      return; 
-    }
-  }
-
-  const payload = {
-    ...(useSudo && { password: sudoPassword })
-  };
-
+export async function sendCommand(command) {
   try {
-    const response = await fetchWithErrorHandling(`/${command}`, {
-      method: "POST",
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    if (response.error) {
-      throw new Error(response.error);
-    }
-
-    showToast(`Command "${command}" executed successfully!`);
+    const res = await apiFetch(`/${command}`, { method: "POST" });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    showToast(`"${command}" executed.`);
   } catch (err) {
-    console.error(`Error sending command [${command}]:`, err.message);
     showToast(`Error: ${err.message}`);
   }
 }
 
-export async function pollLogs(autoScroll) {
-  if (hideLogs) return;
-  const logLength = document.getElementById("log-length").value;
-  const logOutput = document.getElementById("log-output");
-  await fetch(`/log?length=${logLength}`)
-    .then((r) => r.text())
-    .then((data) => {
-      logOutput.textContent = data;
-      if (autoScroll) logOutput.scrollTop = logOutput.scrollHeight;
-    })
-    .catch((err) => console.error("Failed to fetch logs:", err));
+export async function confirmAction(command) {
+  if (!confirm(`Are you sure you want to ${command}? This cannot be undone.`)) return;
+  await sendCommand(command);
 }
 
+export async function sendRconCommand() {
+  const input = document.getElementById("rcon-command");
+  const output = document.getElementById("rcon-response");
+  const cmd = input.value.trim();
+  if (!cmd) return;
+
+  try {
+    const res = await apiFetch("/command", {
+      method: "POST",
+      body: JSON.stringify({ command: cmd }),
+    });
+    const data = await res.json();
+    output.textContent = data.output || data.error || "No response.";
+    input.value = "";
+  } catch (err) {
+    output.textContent = `Error: ${err.message}`;
+  }
+}
+
+// ── Status & Logs ──
+
 export async function getStatus() {
-  await fetch("/status")
-    .then((r) => r.json())
-    .then((status) => {
-      if (status.error)
-        return console.error("Error fetching status:", status.error);
-      document.getElementById("status").textContent =
-        status.output || "Status: Unknown";
-    })
-    .catch((err) => console.error("Failed to fetch status:", err));
+  try {
+    const res = await fetch("/status");
+    const data = await res.json();
+    document.getElementById("status").textContent = data.output || "Status: Unknown";
+  } catch {
+    document.getElementById("status").textContent = "Status: Connection Error";
+  }
+}
+
+export async function pollLogs(autoScroll) {
+  const logLength = document.getElementById("log-length")?.value || 100;
+  const logOutput = document.getElementById("log-output");
+  try {
+    const res = await fetch(`/log?length=${logLength}`);
+    const text = await res.text();
+    logOutput.textContent = text;
+    if (autoScroll) logOutput.scrollTop = logOutput.scrollHeight;
+  } catch {
+    /* silent — logs may not be available */
+  }
 }
 
 export async function loadBackups() {
-  await fetchWithErrorHandling("/list-backups").then((backups) => {
-    if (!Array.isArray(backups)) return console.info("Unexpected format");
+  try {
+    const res = await apiFetch("/list-backups");
+    const backups = await res.json();
+    if (!Array.isArray(backups)) return;
 
     const restoreSelect = document.getElementById("backup-select");
     const downloadSelect = document.getElementById("download-file");
-    restoreSelect.innerHTML = downloadSelect.innerHTML =
-      '<option value="" disabled selected>Choose Backup</option>';
+    const defaultOpt = '<option value="" disabled selected>Choose Backup</option>';
+    restoreSelect.innerHTML = defaultOpt;
+    downloadSelect.innerHTML = defaultOpt;
 
-    backups.forEach(({ path }) => {
-      const parts = path.split("/").filter(Boolean);
-      const name = parts.slice(-2).join("/"); // e.g. "dir/file"
-
-      [restoreSelect, downloadSelect].forEach((select) => {
-        const option = document.createElement("option");
-        option.value = path;
-        option.textContent = name;
-        select.appendChild(option);
-      });
-    });
-  });
+    for (const backup of backups) {
+      const label = backup.path;
+      const opt = (sel) => {
+        const o = document.createElement("option");
+        o.value = backup.path;
+        o.textContent = label;
+        sel.appendChild(o);
+      };
+      opt(restoreSelect);
+      opt(downloadSelect);
+    }
+  } catch {
+    /* silent on load */
+  }
 }
+
+// ── Auth ──
 
 export async function isAuthed() {
   const token = localStorage.getItem("token");
   if (!token) return false;
-
   try {
     const res = await fetch("/isAuthenticated", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     });
-
-    if (res.status === 200) {
-      return true;
-    } else {
-      return false;
-    }
-  } catch (err) {
-    console.error(err);
-    localStorage.removeItem("token");
-    showToast("Session expired. Please log in again.");
-    showTab("login");
+    return res.ok;
+  } catch {
     return false;
   }
 }
 
-export function login() {
+export async function login() {
   const username = document.getElementById("username").value;
   const password = document.getElementById("password").value;
-  fetch("/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
-  })
-    .then((res) => {
-      if (res.status === 200) {
-        const token = res
-          .json()
-          .then((data) => data.token)
-          .then((token) => {
-            localStorage.setItem("token", token);
-            showToast("Login successful!");
-          })
-          .then(() => {
-            showTab("control");
-            updateUi(true);
-          });
-        return token;
-      }
-      throw new Error("Login failed");
-    })
-    .catch((err) => showToast(err.message));
+  try {
+    const res = await fetch("/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    if (!res.ok) throw new Error("Invalid credentials");
+    const { token } = await res.json();
+    localStorage.setItem("token", token);
+    showToast("Login successful!");
+    showTab("control");
+    updateAuthState(true);
+  } catch (err) {
+    showToast(err.message);
+  }
 }
 
-export function logout() {
-  fetch("/logout", {
+export async function logout() {
+  const token = localStorage.getItem("token");
+  await fetch("/logout", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
-  })
-    .then((res) => {
-      if (res.status === 201) {
-        localStorage.removeItem("token");
-        window.location.href = "/";
-        updateUi(false);
-      } else {
-        throw new Error("Logout failed");
-      }
-    })
-    .catch((err) => showToast(err.message));
+    headers: { Authorization: `Bearer ${token}` },
+  }).catch(() => {});
+  localStorage.removeItem("token");
+  updateAuthState(false);
+  showTab("login");
+  showToast("Logged out.");
 }
