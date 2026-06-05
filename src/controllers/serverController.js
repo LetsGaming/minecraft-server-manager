@@ -1,10 +1,12 @@
+"use strict";
+
 const { runScript } = require("../utils/runScript");
 const { sendRconCommand, isRconAvailable } = require("../utils/rcon");
 const config = require("../config");
 
 /**
- * Creates a handler that runs a script with optional sudo.
- * If req.body.password is provided, the script runs via sudo -S.
+ * Creates a handler that runs a named management script.
+ * Scripts run via passwordless sudo — no password is accepted from the caller.
  */
 const handleScript = (scriptKey, successMsg, opts = {}) => async (req, res) => {
   const script = config.SCRIPTS[scriptKey];
@@ -12,10 +14,8 @@ const handleScript = (scriptKey, successMsg, opts = {}) => async (req, res) => {
     return res.status(400).json({ error: `Unknown script: ${scriptKey}` });
   }
   try {
-    const password = req.body?.password || null;
     const result = await runScript(script, opts.args || [], {
-      password,
-      timeoutMs: opts.timeoutMs || 120000,
+      timeoutMs: opts.timeoutMs || 120_000,
     });
     res.json(result || { message: successMsg });
   } catch (err) {
@@ -39,17 +39,15 @@ module.exports = {
     }
   },
 
-  start:        handleScript("start", "Server started."),
-  shutdown:     handleScript("shutdown", "Server shut down."),
-  restart:      handleScript("restart", "Server restarted."),
-  smartRestart: handleScript("smartRestart", "Server restarted (smart)."),
+  start:        handleScript("start",        "Server started."),
+  shutdown:     handleScript("shutdown",      "Server shut down."),
+  restart:      handleScript("restart",       "Server restarted."),
+  smartRestart: handleScript("smartRestart",  "Server restarted (smart)."),
 
   rollback: async (req, res) => {
     try {
-      const password = req.body?.password || null;
       const result = await runScript(config.SCRIPTS.rollback, ["--y"], {
-        password,
-        timeoutMs: 300000,
+        timeoutMs: 300_000,
       });
       res.json(result || { message: "Rollback complete." });
     } catch (err) {
@@ -62,7 +60,7 @@ module.exports = {
     if (!command) return res.status(400).json({ error: "No command provided." });
 
     const normalized = command.trim().toLowerCase();
-    if (config.BLOCKED_COMMANDS.some(b => normalized.startsWith(b))) {
+    if (config.BLOCKED_COMMANDS.some((b) => normalized.startsWith(b))) {
       return res.status(403).json({ error: `Command blocked: ${command}` });
     }
 

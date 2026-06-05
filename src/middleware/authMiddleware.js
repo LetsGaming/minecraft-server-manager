@@ -1,7 +1,6 @@
-const { tokenStore } = require("../controllers/authController");
-const config = require("../config");
+"use strict";
 
-const TTL_MS = (config.SESSION_TTL_HOURS || 24) * 3600 * 1000;
+const { tokenStore, TTL_MS } = require("../controllers/authController");
 
 exports.isAuthenticated = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -10,13 +9,13 @@ exports.isAuthenticated = (req, res, next) => {
   }
 
   const token = authHeader.split(" ")[1];
-  const data = tokenStore.get(token);
+  const data  = tokenStore.get(token);
 
   if (!data) {
     return res.status(401).json({ message: "Invalid or expired token" });
   }
 
-  // Check TTL
+  // TTL_MS imported from authController — single source of truth
   if (Date.now() - data.created > TTL_MS) {
     tokenStore.delete(token);
     return res.status(401).json({ message: "Session expired" });
