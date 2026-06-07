@@ -7,7 +7,8 @@
     "start": "node app.js",
     "dev": "npx nodemon app.js",
     "register": "node scripts/register.js",
-    "update": "node scripts/update-deps.js"
+    "update": "node scripts/update-deps.js",
+    "test": "node --test tests/rcon.test.js tests/backup.test.js tests/auth.test.js"
   },
   "author": "LetsGaming",
   "license": "MIT",
