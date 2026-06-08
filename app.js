@@ -34,7 +34,9 @@ app.use("/", require("./src/routes/authRoutes"));
 app.use("/", require("./src/routes/serverRoutes"));
 app.use("/", require("./src/routes/backupRoutes"));
 app.use("/", require("./src/routes/logRoutes"));
-app.use("/", require("./src/routes/terminalRoutes"));
+// terminalRoutes registers its ws route directly on app (not a Router) because
+// express-ws 5.x only patches the app instance, not express.Router() instances.
+require("./src/routes/terminalRoutes")(app);
 
 // ── Start ────────────────────────────────────────────────────────────────────
 const port = config.PORT;
