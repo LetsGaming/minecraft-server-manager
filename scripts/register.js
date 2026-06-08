@@ -2,7 +2,7 @@ const bcrypt = require("bcrypt");
 const fs = require("fs");
 const path = require("path");
 
-const usersFile = path.join(__dirname, "src", "config", "users.json");
+const usersFile = path.join(__dirname, "..", "src", "config", "users.json");
 if (!fs.existsSync(usersFile)) {
   fs.writeFileSync(usersFile, JSON.stringify([]), "utf-8");
 }
