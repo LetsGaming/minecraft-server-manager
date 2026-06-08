@@ -68,8 +68,15 @@ export async function showTab(tabId) {
 export function loadTerminal() {
   if (terminalLoaded) return;
   setLogView(false);
-  terminal();
   terminalLoaded = true;
+  // Pass a callback so that when the WS closes (or fails), the flag is reset
+  // and the user can re-toggle the checkbox to reconnect.
+  terminal(() => {
+    terminalLoaded = false;
+    setLogView(true);
+    const toggle = document.getElementById("log-toggle-button");
+    if (toggle) toggle.checked = false;
+  });
 }
 
 /**

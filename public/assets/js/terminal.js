@@ -1,6 +1,17 @@
-export function terminal() {
+export async function terminal(onClose) {
+  const termEl = document.getElementById("terminal");
+  if (!termEl) return;
+
+  // Guard: xterm must be loaded via CDN before this runs
+  if (typeof Terminal === "undefined" || typeof FitAddon === "undefined") {
+    termEl.textContent = "Terminal libraries not loaded. Check your network connection.";
+    if (onClose) onClose();
+    return;
+  }
+
+  let term;
   try {
-    const term = new Terminal({
+    term = new Terminal({
       fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
       fontSize: 14,
       cursorBlink: true,
@@ -14,34 +25,64 @@ export function terminal() {
 
     const fitAddon = new FitAddon.FitAddon();
     term.loadAddon(fitAddon);
-    term.open(document.getElementById("terminal"));
+    term.open(termEl);
     fitAddon.fit();
-
-    const proto = location.protocol === "https:" ? "wss:" : "ws:";
-    const token = localStorage.getItem("token");
-    const socket = new WebSocket(`${proto}//${location.host}/ws/terminal?token=${token}`);
-
-    socket.addEventListener("open", () => term.writeln("Connected to server.\r\n"));
-    socket.addEventListener("message", (e) => term.write(e.data));
-    socket.addEventListener("close", () => term.writeln("\r\n[Connection closed]"));
-    socket.addEventListener("error", () => term.writeln("\r\n[WebSocket error]"));
-
-    let buf = "";
-    term.onData((data) => {
-      if (data === "\r") {
-        socket.send(buf + "\n");
-        term.write("\r\n");
-        buf = "";
-      } else if (data === "\u007f") {
-        if (buf.length) { buf = buf.slice(0, -1); term.write("\b \b"); }
-      } else {
-        buf += data;
-        term.write(data);
-      }
-    });
-
     window.addEventListener("resize", () => fitAddon.fit());
   } catch (err) {
-    console.error("Terminal error:", err);
+    console.error("Terminal init error:", err);
+    termEl.textContent = "Failed to initialise terminal: " + err.message;
+    if (onClose) onClose();
+    return;
   }
+
+  // ── Obtain a one-time WebSocket ticket ──────────────────────────────────
+  // The JWT must not appear in the WS URL (visible in access logs).
+  // Instead we exchange it for a short-lived single-use ticket first.
+  const token = localStorage.getItem("token");
+  let ticket;
+  try {
+    const res = await fetch("/api/ws-ticket", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!res.ok) {
+      term.writeln("\r\n[Authentication failed — please log in again]");
+      if (onClose) onClose();
+      return;
+    }
+    ({ ticket } = await res.json());
+  } catch (err) {
+    term.writeln("\r\n[Could not obtain WS ticket: " + err.message + "]");
+    if (onClose) onClose();
+    return;
+  }
+
+  // ── Connect to WebSocket ─────────────────────────────────────────────────
+  const proto  = location.protocol === "https:" ? "wss:" : "ws:";
+  const socket = new WebSocket(`${proto}//${location.host}/ws/terminal?ticket=${ticket}`);
+
+  socket.addEventListener("open",    () => term.writeln("Connected to server.\r\n"));
+  socket.addEventListener("message", (e) => term.write(e.data));
+  socket.addEventListener("close",   () => {
+    term.writeln("\r\n[Connection closed]");
+    if (onClose) onClose();
+  });
+  socket.addEventListener("error",   () => term.writeln("\r\n[WebSocket error]"));
+
+  let buf = "";
+  term.onData((data) => {
+    if (data === "\r") {
+      socket.send(buf + "\n");
+      term.write("\r\n");
+      buf = "";
+    } else if (data === "\u007f") {
+      if (buf.length) { buf = buf.slice(0, -1); term.write("\b \b"); }
+    } else {
+      buf += data;
+      term.write(data);
+    }
+  });
 }
