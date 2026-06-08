@@ -3,6 +3,10 @@ const fs = require("fs");
 const path = require("path");
 
 const usersFile = path.join(__dirname, "..", "src", "config", "users.json");
+const configDir = path.dirname(usersFile);
+if (!fs.existsSync(configDir)) {
+  fs.mkdirSync(configDir, { recursive: true });
+}
 if (!fs.existsSync(usersFile)) {
   fs.writeFileSync(usersFile, JSON.stringify([]), "utf-8");
 }
