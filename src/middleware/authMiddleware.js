@@ -1,14 +1,16 @@
 "use strict";
 
 const { verifyToken } = require("../utils/jwt");
-const { TTL_MS }      = require("../controllers/authController");
+const { TTL_MS } = require("../controllers/authController");
 
 exports.isAuthenticated = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer "))
-    return res.status(401).json({ message: "Missing or invalid Authorization header" });
+    return res
+      .status(401)
+      .json({ message: "Missing or invalid Authorization header" });
 
-  const token   = authHeader.split(" ")[1];
+  const token = authHeader.split(" ")[1];
   const payload = verifyToken(token);
 
   if (!payload)

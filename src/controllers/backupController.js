@@ -3,7 +3,9 @@ const fs = require("fs");
 const { runScript } = require("../utils/runScript");
 const config = require("../config");
 
-const BACKUP_DIR = config.BACKUPS_PATH || path.join(config.SERVER_PATH, "..", "backups", config.INSTANCE_NAME);
+const BACKUP_DIR =
+  config.BACKUPS_PATH ||
+  path.join(config.SERVER_PATH, "..", "backups", config.INSTANCE_NAME);
 
 // ── Helpers ──
 
@@ -57,14 +59,21 @@ module.exports = {
 
   restoreBackup: async (req, res) => {
     const { file } = req.body;
-    if (!file) return res.status(400).json({ error: "No backup file specified." });
+    if (!file)
+      return res.status(400).json({ error: "No backup file specified." });
 
     const filePath = resolveBackupPath(file);
-    if (!filePath) return res.status(403).json({ error: "Invalid backup path." });
-    if (!fs.existsSync(filePath)) return res.status(404).json({ error: "Backup file not found." });
+    if (!filePath)
+      return res.status(403).json({ error: "Invalid backup path." });
+    if (!fs.existsSync(filePath))
+      return res.status(404).json({ error: "Backup file not found." });
 
     try {
-      const result = await runScript(config.SCRIPTS.restore, ["--file", filePath, "--y"], 600000);
+      const result = await runScript(
+        config.SCRIPTS.restore,
+        ["--file", filePath, "--y"],
+        600000,
+      );
       res.json(result || { message: "Backup restored." });
     } catch (err) {
       res.status(500).json(err);
@@ -73,11 +82,14 @@ module.exports = {
 
   downloadBackup: (req, res) => {
     const { file } = req.query;
-    if (!file) return res.status(400).json({ error: "No backup file specified." });
+    if (!file)
+      return res.status(400).json({ error: "No backup file specified." });
 
     const filePath = resolveBackupPath(file);
-    if (!filePath) return res.status(403).json({ error: "Invalid backup path." });
-    if (!fs.existsSync(filePath)) return res.status(404).json({ error: "Backup file not found." });
+    if (!filePath)
+      return res.status(403).json({ error: "Invalid backup path." });
+    if (!fs.existsSync(filePath))
+      return res.status(404).json({ error: "Backup file not found." });
 
     try {
       const stat = fs.statSync(filePath);

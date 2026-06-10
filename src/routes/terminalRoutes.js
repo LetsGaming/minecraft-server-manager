@@ -1,19 +1,18 @@
 "use strict";
 
-const { initTerminal } = require("../controllers/terminalController");
+const registry = require("../registry");
 const { validateTicket } = require("../controllers/authController");
 
-// express-ws patches the app instance but not plain express.Router() instances.
-// We export a registration function that registers the ws route directly on
-// the app, which already has .ws() from the expressWs(app, server) call in app.js.
+// express-ws patches the app instance but not express.Router() instances,
+// so we export a registration function that attaches the ws route directly
+// on the app (which already has .ws() from expressWs(app, server) in app.js).
 module.exports = function registerTerminalRoutes(app) {
-  // ── WebSocket terminal ────────────────────────────────────────────────────
   // Auth uses a one-time ticket (?ticket=<hex>) obtained from POST /api/ws-ticket.
-  // This prevents the session token from appearing in server access logs, which
-  // is the risk when tokens are passed as URL query parameters.
-  app.ws("/ws/terminal", (ws, req) => {
-    const url      = new URL(req.url, `http://${req.headers.host}`);
-    const ticket   = url.searchParams.get("ticket");
+  // This prevents the JWT from appearing in server access logs.
+  app.ws("/instances/:id/terminal", (ws, req) => {
+    const { id } = req.params;
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const ticket = url.searchParams.get("ticket");
     const username = validateTicket(ticket);
 
     if (!username) {
@@ -22,7 +21,14 @@ module.exports = function registerTerminalRoutes(app) {
       return;
     }
 
+    const ops = registry.get(id);
+    if (!ops) {
+      ws.send(`Instance "${id}" not found`);
+      ws.close();
+      return;
+    }
+
     req.user = { username };
-    initTerminal(ws);
+    ops.initTerminal(ws);
   });
 };

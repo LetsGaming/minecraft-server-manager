@@ -1,7 +1,7 @@
 "use strict";
 
-const express    = require("express");
-const router     = express.Router();
+const express = require("express");
+const router = express.Router();
 const logController = require("../controllers/logController");
 
 // Logs are unauthenticated — the frontend polls them without a token.

@@ -1,4 +1,4 @@
-import { isAuthed } from "./api.js";
+import { isAuthed, getCurrentInstance } from "./api.js";
 import { terminal } from "./terminal.js";
 import { setLogView } from "./utils.js";
 
@@ -26,7 +26,10 @@ export function showToast(message) {
 }
 
 function drainToasts() {
-  if (!toastQueue.length) { toastActive = false; return; }
+  if (!toastQueue.length) {
+    toastActive = false;
+    return;
+  }
   toastActive = true;
 
   const msg = toastQueue.shift();
@@ -39,7 +42,10 @@ function drainToasts() {
 
   setTimeout(() => {
     el.classList.remove("show");
-    setTimeout(() => { el.remove(); drainToasts(); }, 400);
+    setTimeout(() => {
+      el.remove();
+      drainToasts();
+    }, 400);
   }, 3000);
 }
 
@@ -48,66 +54,41 @@ function drainToasts() {
 let terminalLoaded = false;
 
 export async function showTab(tabId) {
-  document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
-  document.querySelectorAll(".tab-button").forEach(el => el.classList.remove("active"));
+  document
+    .querySelectorAll(".tab-content")
+    .forEach((el) => el.classList.remove("active"));
+  document
+    .querySelectorAll(".tab-button")
+    .forEach((el) => el.classList.remove("active"));
 
   document.getElementById(tabId)?.classList.add("active");
-  document.querySelector(`.tab-button[onclick="showTab('${tabId}')"]`)?.classList.add("active");
+  document
+    .querySelector(`.tab-button[onclick="showTab('${tabId}')"]`)
+    ?.classList.add("active");
 
   if (tabId === "log") {
     const authed = await isAuthed();
     if (authed && !terminalLoaded) {
       const toggle = document.getElementById("log-toggle-button");
       if (toggle?.checked) {
-        loadTerminal();
+        loadTerminal(getCurrentInstance());
       }
     }
   }
 }
 
-export function loadTerminal() {
+/**
+ * @param {string} instanceId — the instance to open a terminal for
+ */
+export function loadTerminal(instanceId) {
   if (terminalLoaded) return;
   setLogView(false);
   terminalLoaded = true;
-  // Pass a callback so that when the WS closes (or fails), the flag is reset
-  // and the user can re-toggle the checkbox to reconnect.
+  // Reset flag when the WS closes so the user can re-toggle the checkbox to reconnect.
   terminal(() => {
     terminalLoaded = false;
     setLogView(true);
     const toggle = document.getElementById("log-toggle-button");
     if (toggle) toggle.checked = false;
-  });
-}
-
-/**
- * Opens the sudo modal and resolves with the entered password.
- * Returns null if the user cancels.
- */
-export function requestSudoPassword() {
-  return new Promise((resolve) => {
-    const modal = document.getElementById("sudo-modal");
-    const input = document.getElementById("sudo-password");
-    const confirmBtn = document.getElementById("confirm-sudo-button");
-    const cancelBtn = document.getElementById("cancel-sudo-button");
-
-    modal.classList.add("active");
-    input.value = "";
-    input.focus();
-
-    const cleanup = () => {
-      modal.classList.remove("active");
-      input.value = "";
-      confirmBtn.removeEventListener("click", onConfirm);
-      cancelBtn.removeEventListener("click", onCancel);
-      input.removeEventListener("keypress", onKey);
-    };
-
-    const onConfirm = () => { const pass = input.value; cleanup(); resolve(pass); };
-    const onCancel = () => { cleanup(); resolve(null); };
-    const onKey = (e) => { if (e.key === "Enter") onConfirm(); };
-
-    confirmBtn.addEventListener("click", onConfirm);
-    cancelBtn.addEventListener("click", onCancel);
-    input.addEventListener("keypress", onKey);
-  });
+  }, instanceId);
 }

@@ -19,8 +19,8 @@ const SECRET = process.env.JWT_SECRET || crypto.randomBytes(32).toString("hex");
 if (!process.env.JWT_SECRET) {
   process.stderr.write(
     "[auth] JWT_SECRET env var not set — generating a per-process secret.\n" +
-    "       Active sessions will be invalidated on restart.\n" +
-    "       Set JWT_SECRET in your environment for persistent sessions.\n",
+      "       Active sessions will be invalidated on restart.\n" +
+      "       Set JWT_SECRET in your environment for persistent sessions.\n",
   );
 }
 
@@ -58,7 +58,7 @@ function sign(headerPayload) {
  * @returns {string}  — compact JWT string
  */
 function issueToken(username, ttlSeconds = 24 * 3600) {
-  const now     = Math.floor(Date.now() / 1000);
+  const now = Math.floor(Date.now() / 1000);
   const payload = b64url(
     JSON.stringify({ sub: username, iat: now, exp: now + ttlSeconds }),
   );
@@ -79,8 +79,8 @@ function verifyToken(token) {
   const [header, payload, sig] = parts;
   // Constant-time comparison to prevent timing oracle on the signature
   const expected = sign(`${header}.${payload}`);
-  const sigBuf  = b64urlDecode(sig);
-  const expBuf  = b64urlDecode(expected);
+  const sigBuf = b64urlDecode(sig);
+  const expBuf = b64urlDecode(expected);
   if (sigBuf.length !== expBuf.length) return null;
   if (!crypto.timingSafeEqual(sigBuf, expBuf)) return null;
 

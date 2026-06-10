@@ -1,11 +1,45 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Minecraft Server Control Panel</title>
     <link rel="stylesheet" href="assets/css/style.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css"
+    />
+    <style>
+      /* ── Instance selector bar ── */
+      .instance-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.5rem 1rem;
+        background: var(--surface-alt, rgba(0, 0, 0, 0.15));
+        border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+      }
+      .instance-bar label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        opacity: 0.7;
+        white-space: nowrap;
+      }
+      .instance-select {
+        flex: 1;
+        max-width: 260px;
+        padding: 0.3rem 0.6rem;
+        border-radius: 6px;
+        border: 1px solid var(--border, rgba(255, 255, 255, 0.2));
+        background: var(--surface, #1a1a2e);
+        color: var(--text, #e2e8f0);
+        font-size: 0.9rem;
+        cursor: pointer;
+      }
+      .instance-select:focus {
+        outline: 2px solid var(--accent, #4ade80);
+      }
+    </style>
   </head>
   <body>
     <div class="align-middle main-container">
@@ -13,23 +47,62 @@
         <div class="header-top">
           <h1>Minecraft Control</h1>
           <div class="header-actions">
-            <select id="theme-select" class="theme-select" onchange="setTheme(this.value)">
+            <select
+              id="theme-select"
+              class="theme-select"
+              onchange="setTheme(this.value)"
+            >
               <option value="emerald">Emerald Night</option>
               <option value="cyber">Midnight Cyber</option>
               <option value="sandstone">Sandstone</option>
             </select>
-            <button class="action-button logout-button login-required" id="logout-button" onclick="logout()">
+            <button
+              class="action-button logout-button login-required"
+              id="logout-button"
+              onclick="logout()"
+            >
               Logout
             </button>
           </div>
         </div>
 
+        <!-- Instance selector — shown only when logged in -->
+        <div class="instance-bar login-required">
+          <label for="instance-select">Instance:</label>
+          <select
+            id="instance-select"
+            class="instance-select"
+            onchange="selectInstance(this.value)"
+          >
+            <option value="" disabled selected>Loading...</option>
+          </select>
+        </div>
+
         <div class="tab-buttons">
-          <button class="tab-button active" id="login-tab-button" onclick="showTab('login')">Login</button>
-          <button class="tab-button login-required" onclick="showTab('control')">Server Control</button>
-          <button class="tab-button login-required" onclick="showTab('backup')">Backups</button>
+          <button
+            class="tab-button active"
+            id="login-tab-button"
+            onclick="showTab('login')"
+          >
+            Login
+          </button>
+          <button
+            class="tab-button login-required"
+            onclick="showTab('control')"
+          >
+            Server Control
+          </button>
+          <button class="tab-button login-required" onclick="showTab('backup')">
+            Backups
+          </button>
           <button class="tab-button" onclick="showTab('log')">Logs</button>
-          <button class="reload-button" onclick="reloadAll()" aria-label="Reload">&#x21bb;</button>
+          <button
+            class="reload-button"
+            onclick="reloadAll()"
+            aria-label="Reload"
+          >
+            &#x21bb;
+          </button>
         </div>
 
         <div id="status">Status: Checking...</div>
@@ -38,9 +111,20 @@
       <!-- Login -->
       <div class="tab-content container active" id="login">
         <h2>Administrator Login</h2>
-        <form onsubmit="login(); return false;" id="login-form">
+        <form
+          onsubmit="
+            handleLogin();
+            return false;
+          "
+          id="login-form"
+        >
           <input type="text" id="username" placeholder="Username" required />
-          <input type="password" id="password" placeholder="Password" required />
+          <input
+            type="password"
+            id="password"
+            placeholder="Password"
+            required
+          />
           <button type="submit" class="action-button">Login to Panel</button>
         </form>
       </div>
@@ -49,21 +133,59 @@
       <div id="control" class="tab-content container">
         <h2>Server Controls</h2>
         <div class="control-buttons-container">
-          <button id="start-button" class="action-button control-button" onclick="sendCommand('start', true)">Start Server</button>
-          <button id="restart-button" class="action-button control-button btn-warning" onclick="sendCommand('restart', true)">Restart Server</button>
-          <button id="stop-button" class="action-button control-button btn-danger" onclick="sendCommand('shutdown', true)">Shutdown Server</button>
-          <button class="action-button control-button btn-secondary" onclick="sendCommand('smart-restart', true)">Smart Restart</button>
+          <button
+            id="start-button"
+            class="action-button control-button"
+            onclick="sendCommand('start')"
+          >
+            Start Server
+          </button>
+          <button
+            id="restart-button"
+            class="action-button control-button btn-warning"
+            onclick="confirmAction('restart')"
+          >
+            Restart Server
+          </button>
+          <button
+            id="stop-button"
+            class="action-button control-button btn-danger"
+            onclick="confirmAction('shutdown')"
+          >
+            Shutdown Server
+          </button>
+          <button
+            class="action-button control-button btn-secondary"
+            onclick="confirmAction('smart-restart')"
+          >
+            Smart Restart
+          </button>
         </div>
 
         <h3>Advanced</h3>
         <div class="control-buttons-container">
-          <button class="action-button control-button btn-danger" onclick="confirmAction('rollback')">Rollback Server</button>
+          <button
+            class="action-button control-button btn-danger"
+            onclick="confirmAction('rollback')"
+          >
+            Rollback Server
+          </button>
         </div>
 
         <div id="rcon-command-section" class="rcon-section">
           <h3>Send Command</h3>
-          <form onsubmit="sendRconCommand(); return false;" class="rcon-form">
-            <input type="text" id="rcon-command" placeholder="Enter server command (e.g. list, say hello)" />
+          <form
+            onsubmit="
+              sendRconCommand();
+              return false;
+            "
+            class="rcon-form"
+          >
+            <input
+              type="text"
+              id="rcon-command"
+              placeholder="Enter server command (e.g. list, say hello)"
+            />
             <button type="submit" class="action-button">Send</button>
           </form>
           <pre id="rcon-response" class="rcon-output"></pre>
@@ -76,7 +198,14 @@
         <div class="log-controls">
           <div class="log-control-inputs">
             <label for="log-length">Lines</label>
-            <input type="number" id="log-length" value="100" min="1" max="1000" class="log-length-input" />
+            <input
+              type="number"
+              id="log-length"
+              value="100"
+              min="1"
+              max="1000"
+              class="log-length-input"
+            />
           </div>
           <div class="log-control-inputs">
             <label for="auto-scroll-checkbox">Auto Scroll</label>
@@ -110,7 +239,9 @@
           <select id="backup-select">
             <option value="" disabled selected>Choose Backup</option>
           </select>
-          <button class="action-button btn-accent" type="submit">Restore Backup</button>
+          <button class="action-button btn-accent" type="submit">
+            Restore Backup
+          </button>
         </form>
 
         <form id="download-form">
@@ -118,7 +249,9 @@
           <select name="file" id="download-file">
             <option value="" disabled selected>Choose Backup</option>
           </select>
-          <button class="action-button btn-secondary" type="submit">Download Backup</button>
+          <button class="action-button btn-secondary" type="submit">
+            Download Backup
+          </button>
         </form>
 
         <div id="download-status" class="download-status">
@@ -128,27 +261,11 @@
       </div>
 
       <footer>
-        <p>Minecraft is a trademark of Mojang AB. Panel v3.0</p>
+        <p>Minecraft is a trademark of Mojang AB. Panel v4.0</p>
       </footer>
     </div>
 
     <div id="toast" class="toast">Message goes here</div>
-
-    <div id="sudo-modal" class="modal-overlay">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>Sudo Authentication</h3>
-          <p>This action requires sudo privileges.</p>
-        </div>
-        <div class="modal-body">
-          <input type="password" id="sudo-password" placeholder="Enter sudo password" autocomplete="current-password" />
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="action-button btn-secondary" id="cancel-sudo-button">Cancel</button>
-          <button type="button" class="action-button" id="confirm-sudo-button">Confirm</button>
-        </div>
-      </div>
-    </div>
 
     <!-- xterm.js loaded before the module so Terminal and FitAddon are
          available as globals when terminal() is called. Versions are pinned

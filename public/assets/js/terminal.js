@@ -1,10 +1,21 @@
-export async function terminal(onClose) {
+/**
+ * @param {() => void}      onClose      — called when the WS connection closes
+ * @param {string}          instanceId   — the instance to connect the terminal to
+ */
+export async function terminal(onClose, instanceId) {
   const termEl = document.getElementById("terminal");
   if (!termEl) return;
 
+  if (!instanceId) {
+    termEl.textContent = "No instance selected.";
+    if (onClose) onClose();
+    return;
+  }
+
   // Guard: xterm must be loaded via CDN before this runs
   if (typeof Terminal === "undefined" || typeof FitAddon === "undefined") {
-    termEl.textContent = "Terminal libraries not loaded. Check your network connection.";
+    termEl.textContent =
+      "Terminal libraries not loaded. Check your network connection.";
     if (onClose) onClose();
     return;
   }
@@ -35,9 +46,9 @@ export async function terminal(onClose) {
     return;
   }
 
-  // ── Obtain a one-time WebSocket ticket ──────────────────────────────────
-  // The JWT must not appear in the WS URL (visible in access logs).
-  // Instead we exchange it for a short-lived single-use ticket first.
+  // ── Obtain a one-time WebSocket ticket ────────────────────────────────────
+  // The JWT must not appear in the WS URL (visible in server access logs).
+  // Exchange it here for a short-lived single-use ticket instead.
   const token = localStorage.getItem("token");
   let ticket;
   try {
@@ -60,18 +71,23 @@ export async function terminal(onClose) {
     return;
   }
 
-  // ── Connect to WebSocket ─────────────────────────────────────────────────
-  const proto  = location.protocol === "https:" ? "wss:" : "ws:";
-  const socket = new WebSocket(`${proto}//${location.host}/ws/terminal?ticket=${ticket}`);
+  // ── Connect to the per-instance WebSocket ─────────────────────────────────
+  const proto = location.protocol === "https:" ? "wss:" : "ws:";
+  const socket = new WebSocket(
+    `${proto}//${location.host}/instances/${instanceId}/terminal?ticket=${ticket}`,
+  );
 
-  socket.addEventListener("open",    () => term.writeln("Connected to server.\r\n"));
+  socket.addEventListener("open", () =>
+    term.writeln("Connected to server.\r\n"),
+  );
   socket.addEventListener("message", (e) => term.write(e.data));
-  socket.addEventListener("close",   () => {
+  socket.addEventListener("close", () => {
     term.writeln("\r\n[Connection closed]");
     if (onClose) onClose();
   });
-  socket.addEventListener("error",   () => term.writeln("\r\n[WebSocket error]"));
+  socket.addEventListener("error", () => term.writeln("\r\n[WebSocket error]"));
 
+  // Line-buffer: send on Enter, handle backspace
   let buf = "";
   term.onData((data) => {
     if (data === "\r") {
@@ -79,7 +95,10 @@ export async function terminal(onClose) {
       term.write("\r\n");
       buf = "";
     } else if (data === "\u007f") {
-      if (buf.length) { buf = buf.slice(0, -1); term.write("\b \b"); }
+      if (buf.length) {
+        buf = buf.slice(0, -1);
+        term.write("\b \b");
+      }
     } else {
       buf += data;
       term.write(data);

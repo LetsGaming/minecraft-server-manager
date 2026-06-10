@@ -7,7 +7,7 @@ export function updateAuthState(isLoggedIn) {
   const loginTab = document.getElementById("login-tab-button");
   const logToggle = document.getElementById("log-toggle-container");
 
-  loginRequired.forEach(el => {
+  loginRequired.forEach((el) => {
     el.style.display = isLoggedIn ? "" : "none";
   });
 
@@ -28,7 +28,7 @@ export function setLogView(showLogs) {
     terminalContainer.style.display = showLogs ? "none" : "block";
     terminalContainer.classList.toggle("terminal-hidden", showLogs);
   }
-  logControls.forEach(el => {
+  logControls.forEach((el) => {
     if (el.id !== "log-toggle-container") {
       el.style.display = showLogs ? "" : "none";
     }

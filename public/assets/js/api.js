@@ -1,10 +1,27 @@
-import { showTab, showToast, requestSudoPassword } from "./ui.js";
+import { showTab, showToast } from "./ui.js";
 import { updateAuthState } from "./utils.js";
 
 export const STATUS_INTERVAL_MS = 30000;
 export const LOG_INTERVAL_MS = 10000;
 
-// ── Fetch wrapper ──
+// ── Current instance ───────────────────────────────────────────────────────
+
+let _currentInstanceId = null;
+
+export function setInstance(id) {
+  _currentInstanceId = id;
+}
+export function getCurrentInstance() {
+  return _currentInstanceId;
+}
+
+/** Returns the /instances/:id prefix, throws if no instance is selected. */
+function iPath(suffix = "") {
+  if (!_currentInstanceId) throw new Error("No instance selected");
+  return `/instances/${_currentInstanceId}${suffix}`;
+}
+
+// ── Fetch wrapper ──────────────────────────────────────────────────────────
 
 export function apiFetch(url, options = {}) {
   const token = localStorage.getItem("token");
@@ -22,24 +39,25 @@ export function apiFetch(url, options = {}) {
   });
 }
 
-// ── Server commands ──
+// ── Instance list ──────────────────────────────────────────────────────────
 
-/**
- * Sends a command to the server.
- * If useSudo is true, prompts for the sudo password first.
- */
-export async function sendCommand(command, useSudo = false) {
-  let password = null;
-
-  if (useSudo) {
-    password = await requestSudoPassword();
-    if (password === null) return; // User cancelled
-  }
-
+export async function loadInstances() {
   try {
-    const res = await apiFetch(`/${command}`, {
+    const res = await fetch("/instances");
+    const data = await res.json();
+    return data.instances || [];
+  } catch {
+    return [];
+  }
+}
+
+// ── Server commands ────────────────────────────────────────────────────────
+
+export async function sendCommand(command) {
+  try {
+    const res = await apiFetch(iPath(`/${command}`), {
       method: "POST",
-      body: JSON.stringify(password ? { password } : {}),
+      body: JSON.stringify({}),
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
@@ -50,8 +68,9 @@ export async function sendCommand(command, useSudo = false) {
 }
 
 export async function confirmAction(command) {
-  if (!confirm(`Are you sure you want to ${command}? This cannot be undone.`)) return;
-  await sendCommand(command, true);
+  if (!confirm(`Are you sure you want to ${command}? This cannot be undone.`))
+    return;
+  await sendCommand(command);
 }
 
 export async function sendRconCommand() {
@@ -61,7 +80,7 @@ export async function sendRconCommand() {
   if (!cmd) return;
 
   try {
-    const res = await apiFetch("/command", {
+    const res = await apiFetch(iPath("/command"), {
       method: "POST",
       body: JSON.stringify({ command: cmd }),
     });
@@ -73,55 +92,67 @@ export async function sendRconCommand() {
   }
 }
 
-// ── Status & Logs ──
+// ── Status & Logs ──────────────────────────────────────────────────────────
 
 export async function getStatus() {
+  const statusEl = document.getElementById("status");
+  if (!_currentInstanceId) {
+    statusEl.textContent = "Select an instance above";
+    return;
+  }
   try {
-    const res = await fetch("/status");
+    const res = await fetch(iPath("/status"));
     const data = await res.json();
-    document.getElementById("status").textContent = data.output || "Status: Unknown";
+    statusEl.textContent = data.output || "Status: Unknown";
   } catch {
-    document.getElementById("status").textContent = "Status: Connection Error";
+    statusEl.textContent = "Status: Connection Error";
   }
 }
 
 export async function pollLogs(autoScroll) {
+  if (!_currentInstanceId) return;
   const logLength = document.getElementById("log-length")?.value || 100;
   const logOutput = document.getElementById("log-output");
   try {
-    const res = await fetch(`/log?length=${logLength}`);
+    const res = await fetch(iPath(`/log?length=${logLength}`));
     const text = await res.text();
     logOutput.textContent = text;
     if (autoScroll) logOutput.scrollTop = logOutput.scrollHeight;
-  } catch { /* silent */ }
+  } catch {
+    /* silent */
+  }
 }
 
 export async function loadBackups() {
+  if (!_currentInstanceId) return;
   try {
-    const res = await apiFetch("/list-backups");
+    const res = await apiFetch(iPath("/list-backups"));
     const backups = await res.json();
     if (!Array.isArray(backups)) return;
 
     const restoreSelect = document.getElementById("backup-select");
     const downloadSelect = document.getElementById("download-file");
-    const defaultOpt = '<option value="" disabled selected>Choose Backup</option>';
+    const defaultOpt =
+      '<option value="" disabled selected>Choose Backup</option>';
     restoreSelect.innerHTML = defaultOpt;
     downloadSelect.innerHTML = defaultOpt;
 
     for (const backup of backups) {
-      const opt = (sel) => {
+      const makeOpt = (sel) => {
         const o = document.createElement("option");
         o.value = backup.path;
         o.textContent = backup.path;
         sel.appendChild(o);
       };
-      opt(restoreSelect);
-      opt(downloadSelect);
+      makeOpt(restoreSelect);
+      makeOpt(downloadSelect);
     }
-  } catch { /* silent on load */ }
+  } catch {
+    /* silent on load */
+  }
 }
 
-// ── Auth ──
+// ── Auth ───────────────────────────────────────────────────────────────────
 
 export async function isAuthed() {
   const token = localStorage.getItem("token");
@@ -136,24 +167,22 @@ export async function isAuthed() {
   }
 }
 
+/**
+ * Authenticate and return true on success.
+ * UI side-effects (toast, tab switch) are handled by main.js's handleLogin wrapper.
+ */
 export async function login() {
   const username = document.getElementById("username").value;
   const password = document.getElementById("password").value;
-  try {
-    const res = await fetch("/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
-    if (!res.ok) throw new Error("Invalid credentials");
-    const { token } = await res.json();
-    localStorage.setItem("token", token);
-    showToast("Login successful!");
-    showTab("control");
-    updateAuthState(true);
-  } catch (err) {
-    showToast(err.message);
-  }
+  const res = await fetch("/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  if (!res.ok) throw new Error("Invalid credentials");
+  const { token } = await res.json();
+  localStorage.setItem("token", token);
+  return true;
 }
 
 export async function logout() {

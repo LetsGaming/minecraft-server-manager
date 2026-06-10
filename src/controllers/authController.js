@@ -1,17 +1,17 @@
 "use strict";
 
-const bcrypt  = require("bcrypt");
-const fs      = require("fs");
-const path    = require("path");
-const crypto  = require("crypto");
-const config  = require("../config");
+const bcrypt = require("bcrypt");
+const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
+const config = require("../config");
 const { issueToken, verifyToken } = require("../utils/jwt");
 
 const usersFile = path.join(__dirname, "..", "config", "users.json");
 
 // ── Shared TTL constant ────────────────────────────────────────────────────
 const TTL_MS = (config.SESSION_TTL_HOURS || 24) * 3600 * 1000;
-const TTL_S  = Math.floor(TTL_MS / 1000);
+const TTL_S = Math.floor(TTL_MS / 1000);
 exports.TTL_MS = TTL_MS;
 
 // ── Legacy tokenStore (used only by authMiddleware for backward compat) ────
@@ -23,14 +23,17 @@ exports.tokenStore = tokenStore;
 
 // ── One-time WebSocket ticket store ───────────────────────────────────────
 const TICKET_TTL_MS = 30_000;
-const ticketStore   = new Map();
+const ticketStore = new Map();
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function loadUsers() {
   if (!fs.existsSync(usersFile)) return [];
-  try { return JSON.parse(fs.readFileSync(usersFile, "utf-8")); }
-  catch { return []; }
+  try {
+    return JSON.parse(fs.readFileSync(usersFile, "utf-8"));
+  } catch {
+    return [];
+  }
 }
 
 // ── Ticket helpers ─────────────────────────────────────────────────────────
@@ -55,7 +58,7 @@ exports.validateTicket = (ticket) => {
 exports.isAuthed = (token) => !!verifyToken(token);
 
 exports.isAuthenticated = (req, res) => {
-  const token   = req.headers.authorization?.split(" ")[1];
+  const token = req.headers.authorization?.split(" ")[1];
   const payload = verifyToken(token);
   if (!payload) return res.status(401).json({ message: "Unauthorized" });
   res.json({ message: "Authenticated", username: payload.sub });
@@ -69,8 +72,10 @@ exports.login = async (req, res) => {
     return res.status(400).json({ message: "Username and password required." });
 
   const users = loadUsers();
-  const user  = users.find((u) => u.username === username);
-  const hash  = user?.passwordHash ?? "$2b$10$invalidhashpadding000000000000000000000000000000000000";
+  const user = users.find((u) => u.username === username);
+  const hash =
+    user?.passwordHash ??
+    "$2b$10$invalidhashpadding000000000000000000000000000000000000";
   const valid = await bcrypt.compare(password, hash);
   if (!user || !valid)
     return res.status(401).json({ message: "Invalid credentials" });

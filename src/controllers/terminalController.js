@@ -7,7 +7,9 @@ const { sendRconCommand, isRconAvailable } = require("../utils/rcon");
 
 function isBlockedCommand(msg) {
   const normalized = msg.trim().toLowerCase();
-  return config.BLOCKED_COMMANDS.some(blocked => normalized.startsWith(blocked));
+  return config.BLOCKED_COMMANDS.some((blocked) =>
+    normalized.startsWith(blocked),
+  );
 }
 
 /** Filter out RCON connect/disconnect noise from log lines */
@@ -20,8 +22,8 @@ const RCON_NOISE_PATTERNS = [
 function filterLogData(data) {
   const text = data.toString();
   const lines = text.split("\n");
-  const filtered = lines.filter(line =>
-    !RCON_NOISE_PATTERNS.some(pattern => line.includes(pattern))
+  const filtered = lines.filter(
+    (line) => !RCON_NOISE_PATTERNS.some((pattern) => line.includes(pattern)),
   );
   // xterm.js needs \r\n — bare \n moves down without returning to column 0
   const result = filtered.join("\r\n");
@@ -55,11 +57,19 @@ function initRconTerminal(ws) {
     tailProc.stdout.on("data", (data) => {
       const filtered = filterLogData(data);
       if (filtered) {
-        try { ws.send(filtered); } catch { /* ws closed */ }
+        try {
+          ws.send(filtered);
+        } catch {
+          /* ws closed */
+        }
       }
     });
     tailProc.stderr.on("data", (data) => {
-      try { ws.send(data.toString()); } catch { /* ws closed */ }
+      try {
+        ws.send(data.toString());
+      } catch {
+        /* ws closed */
+      }
     });
   } else {
     ws.send("[Log file not found — commands will still be sent via RCON]\r\n");
@@ -89,8 +99,12 @@ function initRconTerminal(ws) {
     }
   });
 
-  ws.on("close", () => { if (tailProc) tailProc.kill(); });
-  ws.on("error", () => { if (tailProc) tailProc.kill(); });
+  ws.on("close", () => {
+    if (tailProc) tailProc.kill();
+  });
+  ws.on("error", () => {
+    if (tailProc) tailProc.kill();
+  });
 }
 
 // ── Screen-based terminal (fallback) ──
@@ -101,7 +115,9 @@ function initScreenTerminal(ws) {
   // Check screen session exists
   const check = spawn("screen", ["-ls"]);
   let screenOutput = "";
-  check.stdout.on("data", d => { screenOutput += d.toString(); });
+  check.stdout.on("data", (d) => {
+    screenOutput += d.toString();
+  });
 
   check.on("close", () => {
     if (!screenOutput.includes(`.${sessionName}`)) {
@@ -122,17 +138,24 @@ function initScreenTerminal(ws) {
     tail.stdout.on("data", (data) => {
       const filtered = filterLogData(data);
       if (filtered) {
-        try { ws.send(filtered); } catch { /* ws closed */ }
+        try {
+          ws.send(filtered);
+        } catch {
+          /* ws closed */
+        }
       }
     });
 
     ws.on("message", (msg) => {
       const raw = msg.toString();
-      if (raw === "close") { tail.kill(); return; }
+      if (raw === "close") {
+        tail.kill();
+        return;
+      }
 
       // Block control characters
       const buf = Buffer.from(raw, "utf-8");
-      if (buf.some(b => [0x01, 0x03, 0x04].includes(b))) {
+      if (buf.some((b) => [0x01, 0x03, 0x04].includes(b))) {
         ws.send("[Blocked] Unsafe control character.\r\n");
         return;
       }
@@ -143,10 +166,20 @@ function initScreenTerminal(ws) {
       }
 
       const formatted = `${raw.trim()}\n`;
-      const send = spawn("screen", ["-S", sessionName, "-X", "stuff", formatted]);
+      const send = spawn("screen", [
+        "-S",
+        sessionName,
+        "-X",
+        "stuff",
+        formatted,
+      ]);
       send.on("close", (code) => {
         if (code !== 0) {
-          try { ws.send(`[Error] Failed to send command.\r\n`); } catch { /* */ }
+          try {
+            ws.send(`[Error] Failed to send command.\r\n`);
+          } catch {
+            /* */
+          }
         }
       });
     });
