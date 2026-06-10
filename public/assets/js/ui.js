@@ -1,21 +1,22 @@
 import { isAuthed, getCurrentInstance } from "./api.js";
-import { terminal } from "./terminal.js";
+import { terminal, destroyTerminal, applyTerminalTheme } from "./terminal.js";
 import { setLogView } from "./utils.js";
 
-// ── Theme ──
+// ── Theme ──────────────────────────────────────────────────────────────────
 
 export function setTheme(name) {
   document.documentElement.setAttribute("data-theme", name);
   localStorage.setItem("pref-theme", name);
   const sel = document.getElementById("theme-select");
   if (sel) sel.value = name;
+  applyTerminalTheme(name); // live-update xterm canvas colours
 }
 
 export function initTheme() {
   setTheme(localStorage.getItem("pref-theme") || "emerald");
 }
 
-// ── Toast queue ──
+// ── Toast queue ────────────────────────────────────────────────────────────
 
 const toastQueue = [];
 let toastActive = false;
@@ -49,7 +50,7 @@ function drainToasts() {
   }, 3000);
 }
 
-// ── Tabs ──
+// ── Tabs ───────────────────────────────────────────────────────────────────
 
 let terminalLoaded = false;
 
@@ -77,18 +78,34 @@ export async function showTab(tabId) {
   }
 }
 
+// ── Terminal ───────────────────────────────────────────────────────────────
+
 /**
- * @param {string} instanceId — the instance to open a terminal for
+ * Open the terminal view for the given instance.
+ * @param {string} instanceId
  */
 export function loadTerminal(instanceId) {
   if (terminalLoaded) return;
+  destroyTerminal(); // safety-net: clean up any lingering WS/xterm from a hidden state
   setLogView(false);
   terminalLoaded = true;
-  // Reset flag when the WS closes so the user can re-toggle the checkbox to reconnect.
   terminal(() => {
     terminalLoaded = false;
     setLogView(true);
     const toggle = document.getElementById("log-toggle-button");
     if (toggle) toggle.checked = false;
   }, instanceId);
+}
+
+/**
+ * Fully close the terminal view — tears down the WebSocket, disposes the xterm
+ * instance, resets the loaded flag, and restores the log view.
+ * Call this whenever the instance changes or the panel is reset.
+ */
+export function closeTerminalView() {
+  terminalLoaded = false;
+  destroyTerminal();
+  setLogView(true);
+  const toggle = document.getElementById("log-toggle-button");
+  if (toggle) toggle.checked = false;
 }

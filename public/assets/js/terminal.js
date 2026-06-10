@@ -1,6 +1,74 @@
+// ── Module-level state (one terminal per page) ─────────────────────────────
+
+let _term = null;
+let _socket = null;
+let _resizeHandler = null;
+
+// ── Theme palettes ─────────────────────────────────────────────────────────
+// Mirror the CSS variable values so xterm's canvas matches the UI themes.
+
+const TERMINAL_THEMES = {
+  emerald: {
+    background: "#0f172a",
+    foreground: "#4ade80",
+    cursor: "#4ade80",
+    cursorAccent: "#0f172a",
+    selection: "rgba(74,  222, 128, 0.25)",
+  },
+  cyber: {
+    background: "#020617",
+    foreground: "#f0abfc",
+    cursor: "#f0abfc",
+    cursorAccent: "#020617",
+    selection: "rgba(240, 171, 252, 0.25)",
+  },
+  sandstone: {
+    background: "#1c1917",
+    foreground: "#f59e0b",
+    cursor: "#f59e0b",
+    cursorAccent: "#1c1917",
+    selection: "rgba(245, 158,  11, 0.25)",
+  },
+};
+
+export function getTerminalTheme(name) {
+  return TERMINAL_THEMES[name] ?? TERMINAL_THEMES.emerald;
+}
+
+/** Live-update the running terminal's colour scheme without reconnecting. */
+export function applyTerminalTheme(name) {
+  if (_term) _term.options.theme = getTerminalTheme(name);
+}
+
+/** Tear down any running terminal + WebSocket cleanly. */
+export function destroyTerminal() {
+  if (_resizeHandler) {
+    window.removeEventListener("resize", _resizeHandler);
+    _resizeHandler = null;
+  }
+  if (_socket) {
+    try {
+      _socket.close();
+    } catch {
+      /* already closed */
+    }
+    _socket = null;
+  }
+  if (_term) {
+    try {
+      _term.dispose();
+    } catch {
+      /* already disposed */
+    }
+    _term = null;
+  }
+}
+
+// ── Terminal entry point ───────────────────────────────────────────────────
+
 /**
- * @param {() => void}      onClose      — called when the WS connection closes
- * @param {string}          instanceId   — the instance to connect the terminal to
+ * @param {() => void} onClose    — called when the WS connection closes
+ * @param {string}     instanceId — the instance to connect the terminal to
  */
 export async function terminal(onClose, instanceId) {
   const termEl = document.getElementById("terminal");
@@ -20,35 +88,35 @@ export async function terminal(onClose, instanceId) {
     return;
   }
 
-  let term;
+  // Clean up any previous instance before creating a new one
+  destroyTerminal();
+
   try {
-    term = new Terminal({
+    const themeName = localStorage.getItem("pref-theme") || "emerald";
+
+    _term = new Terminal({
       fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
       fontSize: 14,
       cursorBlink: true,
-      theme: {
-        background: "#0f172a",
-        foreground: "#4ade80",
-        cursor: "#4ade80",
-        selection: "rgba(74, 222, 128, 0.3)",
-      },
+      theme: getTerminalTheme(themeName),
     });
 
     const fitAddon = new FitAddon.FitAddon();
-    term.loadAddon(fitAddon);
-    term.open(termEl);
+    _term.loadAddon(fitAddon);
+    _term.open(termEl);
     fitAddon.fit();
-    window.addEventListener("resize", () => fitAddon.fit());
+
+    _resizeHandler = () => fitAddon.fit();
+    window.addEventListener("resize", _resizeHandler);
   } catch (err) {
     console.error("Terminal init error:", err);
     termEl.textContent = "Failed to initialise terminal: " + err.message;
+    destroyTerminal();
     if (onClose) onClose();
     return;
   }
 
   // ── Obtain a one-time WebSocket ticket ────────────────────────────────────
-  // The JWT must not appear in the WS URL (visible in server access logs).
-  // Exchange it here for a short-lived single-use ticket instead.
   const token = localStorage.getItem("token");
   let ticket;
   try {
@@ -60,48 +128,53 @@ export async function terminal(onClose, instanceId) {
       },
     });
     if (!res.ok) {
-      term.writeln("\r\n[Authentication failed — please log in again]");
+      _term.writeln("\r\n[Authentication failed — please log in again]");
+      destroyTerminal();
       if (onClose) onClose();
       return;
     }
     ({ ticket } = await res.json());
   } catch (err) {
-    term.writeln("\r\n[Could not obtain WS ticket: " + err.message + "]");
+    _term.writeln("\r\n[Could not obtain WS ticket: " + err.message + "]");
+    destroyTerminal();
     if (onClose) onClose();
     return;
   }
 
   // ── Connect to the per-instance WebSocket ─────────────────────────────────
   const proto = location.protocol === "https:" ? "wss:" : "ws:";
-  const socket = new WebSocket(
+  _socket = new WebSocket(
     `${proto}//${location.host}/instances/${instanceId}/terminal?ticket=${ticket}`,
   );
 
-  socket.addEventListener("open", () =>
-    term.writeln("Connected to server.\r\n"),
+  _socket.addEventListener("open", () =>
+    _term.writeln("Connected to server.\r\n"),
   );
-  socket.addEventListener("message", (e) => term.write(e.data));
-  socket.addEventListener("close", () => {
-    term.writeln("\r\n[Connection closed]");
+  _socket.addEventListener("message", (e) => _term.write(e.data));
+  _socket.addEventListener("close", () => {
+    if (_term) _term.writeln("\r\n[Connection closed]");
+    _socket = null;
     if (onClose) onClose();
   });
-  socket.addEventListener("error", () => term.writeln("\r\n[WebSocket error]"));
+  _socket.addEventListener("error", () => {
+    if (_term) _term.writeln("\r\n[WebSocket error]");
+  });
 
   // Line-buffer: send on Enter, handle backspace
   let buf = "";
-  term.onData((data) => {
+  _term.onData((data) => {
     if (data === "\r") {
-      socket.send(buf + "\n");
-      term.write("\r\n");
+      _socket?.send(buf + "\n");
+      _term.write("\r\n");
       buf = "";
     } else if (data === "\u007f") {
       if (buf.length) {
         buf = buf.slice(0, -1);
-        term.write("\b \b");
+        _term.write("\b \b");
       }
     } else {
       buf += data;
-      term.write(data);
+      _term.write(data);
     }
   });
 }

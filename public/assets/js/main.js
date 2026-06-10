@@ -15,8 +15,15 @@ import {
   getCurrentInstance,
 } from "./api.js";
 
-import { showToast, showTab, setTheme, initTheme, loadTerminal } from "./ui.js";
-import { updateAuthState, setLogView } from "./utils.js";
+import {
+  showToast,
+  showTab,
+  setTheme,
+  initTheme,
+  loadTerminal,
+  closeTerminalView,
+} from "./ui.js";
+import { updateAuthState } from "./utils.js";
 
 // ── Expose to HTML onclick handlers ───────────────────────────────────────
 Object.assign(window, {
@@ -35,21 +42,17 @@ window.handleLogin = async function () {
     await login();
     showToast("Login successful!");
     updateAuthState(true);
-    await populateInstances();
+    await loadBackups(); // instances already selected at boot; just pull auth-gated data
     showTab("control");
   } catch (err) {
     showToast(err.message);
   }
 };
 
-// ── Logout wrapper (clears instance selection) ────────────────────────────
+// ── Logout wrapper ────────────────────────────────────────────────────────
 window.logout = async function () {
   await logout();
-  setInstance(null);
-  const sel = document.getElementById("instance-select");
-  if (sel)
-    sel.innerHTML =
-      '<option value="" disabled selected>Select Instance</option>';
+  // Keep instance selection — logs are public and readable without auth.
 };
 
 // ── Instance selection ─────────────────────────────────────────────────────
@@ -58,12 +61,13 @@ async function selectInstance(id) {
   setInstance(id);
   localStorage.setItem("pref-instance", id);
 
-  // Reset terminal if it was open for a different instance
-  setLogView(true);
-  const toggle = document.getElementById("log-toggle-button");
-  if (toggle) toggle.checked = false;
-
-  await Promise.all([loadBackups(), getStatus(), pollLogs(false)]);
+  // Tear down any active terminal — closes the WS, disposes xterm, resets the
+  // terminalLoaded flag, and unchecks the toggle. Without this, the flag stays
+  // true and the next checkbox click is silently swallowed.
+  closeTerminalView();
+  const ops = [getStatus(), pollLogs(false)];
+  if (localStorage.getItem("token")) ops.push(loadBackups());
+  await Promise.all(ops);
 }
 
 async function populateInstances() {
@@ -100,7 +104,9 @@ async function populateInstances() {
 // ── Reload all ─────────────────────────────────────────────────────────────
 
 async function reloadAll() {
-  await Promise.all([loadBackups(), getStatus(), pollLogs(false)]);
+  const ops = [getStatus(), pollLogs(false)];
+  if (localStorage.getItem("token")) ops.push(loadBackups());
+  await Promise.all(ops);
   showToast("Reloaded!");
 }
 
@@ -245,11 +251,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   const scrollCheckbox = document.getElementById("auto-scroll-checkbox");
   const getAutoScroll = setupAutoScroll(logOutput, scrollCheckbox);
 
+  // Instances are public — populate before the auth check so the selector
+  // and log view are usable even without logging in.
+  await populateInstances();
+
   const authed = await isAuthed();
   updateAuthState(authed);
 
   if (authed) {
-    await populateInstances();
+    await loadBackups();
     showTab("control");
   }
 
@@ -259,7 +269,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (e.target.checked) {
         loadTerminal(getCurrentInstance());
       } else {
-        setLogView(true);
+        closeTerminalView();
       }
     });
 

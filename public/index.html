@@ -9,37 +9,6 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css"
     />
-    <style>
-      /* ── Instance selector bar ── */
-      .instance-bar {
-        display: flex;
-        align-items: center;
-        gap: 0.6rem;
-        padding: 0.5rem 1rem;
-        background: var(--surface-alt, rgba(0, 0, 0, 0.15));
-        border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.1));
-      }
-      .instance-bar label {
-        font-size: 0.85rem;
-        font-weight: 600;
-        opacity: 0.7;
-        white-space: nowrap;
-      }
-      .instance-select {
-        flex: 1;
-        max-width: 260px;
-        padding: 0.3rem 0.6rem;
-        border-radius: 6px;
-        border: 1px solid var(--border, rgba(255, 255, 255, 0.2));
-        background: var(--surface, #1a1a2e);
-        color: var(--text, #e2e8f0);
-        font-size: 0.9rem;
-        cursor: pointer;
-      }
-      .instance-select:focus {
-        outline: 2px solid var(--accent, #4ade80);
-      }
-    </style>
   </head>
   <body>
     <div class="align-middle main-container">
@@ -66,8 +35,8 @@
           </div>
         </div>
 
-        <!-- Instance selector — shown only when logged in -->
-        <div class="instance-bar login-required">
+        <!-- Instance selector — always visible; logs are public -->
+        <div class="instance-bar">
           <label for="instance-select">Instance:</label>
           <select
             id="instance-select"
