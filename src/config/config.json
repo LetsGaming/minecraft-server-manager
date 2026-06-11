@@ -3,9 +3,5 @@
   "LOG_LINES": 1000,
   "BLOCKED_COMMANDS": [],
   "SESSION_TTL_HOURS": 24,
-  "instances": {
-    "your-instance-name": {
-      "scriptDir": "/path/to/scripts/your-instance-name"
-    }
-  }
+  "instances": {}
 }
