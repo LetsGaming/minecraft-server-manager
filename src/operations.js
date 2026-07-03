@@ -197,8 +197,13 @@ function createOperations(cfg) {
   }
 
   function _isBlocked(msg) {
-    const lower = msg.trim().toLowerCase();
-    return (cfg.blockedCommands || []).some((b) => lower.startsWith(b));
+    // SEC-05: normalise by stripping any leading slashes before matching.
+    // Otherwise a blocked "stop" is trivially reached as "/stop", because the
+    // RCON path strips the leading "/" only *after* this check runs.
+    const normalized = msg.trim().replace(/^\/+/, "").toLowerCase();
+    return (cfg.blockedCommands || []).some((b) =>
+      normalized.startsWith(String(b).trim().replace(/^\/+/, "").toLowerCase()),
+    );
   }
 
   function _rconTerminal(ws) {

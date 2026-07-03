@@ -21,6 +21,10 @@ function runScript(scriptPath, args = [], cfg, { timeoutMs = 120_000 } = {}) {
         cwd: cfg.scriptDir,
         env: { ...process.env, HOME: `/home/${cfg.linuxUser}` },
         stdio: ["ignore", "pipe", "pipe"],
+        // BUG-01: make the child a process-group leader so a timeout can
+        // signal the whole tree (sudo → bash → server), not just the sudo
+        // parent — which previously left the real work orphaned.
+        detached: true,
       },
     );
 
@@ -30,7 +34,13 @@ function runScript(scriptPath, args = [], cfg, { timeoutMs = 120_000 } = {}) {
 
     const timer = setTimeout(() => {
       killed = true;
-      child.kill("SIGTERM");
+      // Kill the process group; fall back to the single child if the group
+      // signal fails (e.g. the child already exited).
+      try {
+        process.kill(-child.pid, "SIGTERM");
+      } catch {
+        child.kill("SIGTERM");
+      }
       reject({
         error: `Script timed out after ${timeoutMs / 1000}s`,
         output: stdout.trim(),

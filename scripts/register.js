@@ -31,6 +31,10 @@ const register = async (username, password) => {
   console.log(`User "${username}" registered successfully.`);
 };
 
-// Get arguments from CLI
-const [, , username, password] = process.argv;
+// Get arguments from CLI.
+// SEC-06: prefer the password from the REGISTER_PASSWORD env var so it never
+// appears in the world-readable process argument list (`ps` / /proc/<pid>/cmdline).
+// Passing it positionally still works for manual/interactive use.
+const [, , username, argvPassword] = process.argv;
+const password = process.env.REGISTER_PASSWORD ?? argvPassword;
 register(username, password);

@@ -1,7 +1,7 @@
 {
   "PORT": 3001,
   "LOG_LINES": 1000,
-  "BLOCKED_COMMANDS": [],
+  "BLOCKED_COMMANDS": ["stop"],
   "SESSION_TTL_HOURS": 24,
   "instances": {}
 }

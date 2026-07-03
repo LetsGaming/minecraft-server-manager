@@ -131,5 +131,9 @@ module.exports = {
   LOG_LINES: rawConfig.LOG_LINES || 1000,
   BLOCKED_COMMANDS: rawConfig.BLOCKED_COMMANDS || [],
   SESSION_TTL_HOURS: rawConfig.SESSION_TTL_HOURS || 24,
+  // SEC-04: when false, the status + log routes require authentication. Default
+  // true preserves the pre-login dashboard behaviour. Regardless of this flag,
+  // IP addresses are redacted from the public log route (see instanceRoutes.js).
+  PUBLIC_LOGS: rawConfig.PUBLIC_LOGS !== false,
   instances,
 };
